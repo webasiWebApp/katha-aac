@@ -39,3 +39,18 @@ yarn-error.*
 # generated native folders
 /ios
 /android
+
+# Android / Gradle (extra)
+.gradle/
+local.properties
+*.apk
+*.aab
+*.keystore
+build/
+.cxx/
+
+# tooling
+coverage/
+.idea/
+.vscode/
+
