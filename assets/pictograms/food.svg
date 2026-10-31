@@ -1,0 +1,15 @@
+<svg width="96" height="96" viewBox="0 0 96 96" fill="none" xmlns="http://www.w3.org/2000/svg">
+<rect width="96" height="96" fill="#F5F5F5"/>
+<g id="Pictograms &#194;&#183; placeholder ARASAAC-style (96 px). Every Sinhala label: verify with SLT">
+<rect x="-280.5" y="-464.5" width="1481" height="721" rx="23.5" fill="white"/>
+<rect x="-280.5" y="-464.5" width="1481" height="721" rx="23.5" stroke="#E1E4E8"/>
+<g id="items">
+<g id="pict/food">
+<path id="Vector" d="M50 78C65.464 78 78 65.464 78 50C78 34.536 65.464 22 50 22C34.536 22 22 34.536 22 50C22 65.464 34.536 78 50 78Z" fill="white" stroke="#1F2933" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+<path id="Vector_2" d="M50 66C58.8366 66 66 58.8366 66 50C66 41.1634 58.8366 34 50 34C41.1634 34 34 41.1634 34 50C34 58.8366 41.1634 66 50 66Z" fill="#F2C94C" stroke="#1F2933" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+<path id="Vector_3" d="M12 14V34M12 34C8 34 6 31.3333 6 26V14M12 34C16 34 18 31.3333 18 26V14M12 34V84" stroke="#1F2933" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+<path id="Vector_4" d="M86 14C90 27.3333 90 36.6667 86 42V84" stroke="#1F2933" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+</g>
+</g>
+</g>
+</svg>

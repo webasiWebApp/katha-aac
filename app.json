@@ -22,6 +22,23 @@
     "web": {
       "favicon": "./assets/favicon.png"
     },
-    "plugins": ["expo-sqlite", "expo-dev-client"]
+    "plugins": [
+      "expo-sqlite",
+      "expo-dev-client",
+      [
+        "expo-font",
+        {
+          "fonts": [
+            "./assets/fonts/NotoSansSinhala_400Regular.ttf",
+            "./assets/fonts/NotoSansSinhala_500Medium.ttf",
+            "./assets/fonts/NotoSansSinhala_600SemiBold.ttf",
+            "./assets/fonts/NotoSansSinhala_700Bold.ttf",
+            "./assets/fonts/NotoSans_400Regular.ttf",
+            "./assets/fonts/NotoSans_600SemiBold.ttf",
+            "./assets/fonts/NotoSans_700Bold.ttf"
+          ]
+        }
+      ]
+    ]
   }
 }

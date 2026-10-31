@@ -1,7 +1,13 @@
 import { StatusBar } from 'expo-status-bar';
 import { StyleSheet, Text, View } from 'react-native';
 
+import { DevGalleryNavigator } from '@/app/navigation/DevGalleryNavigator';
+
 export default function App() {
+  // Dev builds open the component gallery (src/app/navigation). Release builds keep the template screen.
+  if (__DEV__) {
+    return <DevGalleryNavigator />;
+  }
   return (
     <View style={styles.container}>
       <Text>Open up App.tsx to start working on your app!</Text>

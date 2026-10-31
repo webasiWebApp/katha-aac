@@ -1,0 +1,21 @@
+<svg width="96" height="96" viewBox="0 0 96 96" fill="none" xmlns="http://www.w3.org/2000/svg">
+<rect width="96" height="96" fill="#F5F5F5"/>
+<g id="Pictograms &#194;&#183; placeholder ARASAAC-style (96 px). Every Sinhala label: verify with SLT">
+<rect x="-160.5" y="-104.5" width="1481" height="721" rx="23.5" fill="white"/>
+<rect x="-160.5" y="-104.5" width="1481" height="721" rx="23.5" stroke="#E1E4E8"/>
+<g id="items">
+<g id="pict/amma">
+<g id="Vector">
+<path d="M24 88V74C24 60.6667 32 54 48 54C64 54 72 60.6667 72 74V88" fill="#F2994A"/>
+<path d="M24 88V74C24 60.6667 32 54 48 54C64 54 72 60.6667 72 74V88" stroke="#1F2933" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+</g>
+<path id="Vector_2" d="M31 50C29 26 34.6667 14 48 14C61.3333 14 67 26 65 50H31Z" fill="#2B2B2B" stroke="#1F2933" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+<path id="Vector_3" d="M48 46C56.2843 46 63 39.2843 63 31C63 22.7157 56.2843 16 48 16C39.7157 16 33 22.7157 33 31C33 39.2843 39.7157 46 48 46Z" fill="#C98E62" stroke="#1F2933" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+<path id="Vector_4" d="M34 27C36.6667 19.6667 41.3333 16 48 16C54.6667 16 59.3333 19.6667 62 27C55.3333 23 46 23 34 27Z" fill="#2B2B2B" stroke="#1F2933" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"/>
+<path id="Vector_5" d="M43 35.2C44.215 35.2 45.2 34.215 45.2 33C45.2 31.785 44.215 30.8 43 30.8C41.785 30.8 40.8 31.785 40.8 33C40.8 34.215 41.785 35.2 43 35.2Z" fill="#1F2933"/>
+<path id="Vector_6" d="M53 35.2C54.215 35.2 55.2 34.215 55.2 33C55.2 31.785 54.215 30.8 53 30.8C51.785 30.8 50.8 31.785 50.8 33C50.8 34.215 51.785 35.2 53 35.2Z" fill="#1F2933"/>
+<path id="Vector_7" d="M43 40C46.3333 42 49.6667 42 53 40" stroke="#1F2933" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"/>
+</g>
+</g>
+</g>
+</svg>

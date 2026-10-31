@@ -54,3 +54,6 @@ coverage/
 .idea/
 .vscode/
 
+
+# graphify output (regenerable)
+graphify-out/
