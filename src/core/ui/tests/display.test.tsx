@@ -1,12 +1,14 @@
 // Display-only facilitator components: Chip, OfflineBadge, Card, ProgressBar, StatTile,
-// EmptyState, Toast. They are not touch targets, so the checks are rendering, labels and roles.
-import { screen } from '@testing-library/react-native';
+// EmptyState, Toast, NumericKeypad. They are not touch targets (except Keypad), so the checks
+// are rendering, labels and roles.
+import { fireEvent, screen } from '@testing-library/react-native';
 
-import { renderThemed } from '@/core/theme/testUtils';
+import { renderThemed, touchSize } from '@/core/theme/testUtils';
 
 import { Card } from '../Card';
 import { Chip, type ChipTone } from '../Chip';
 import { EmptyState } from '../EmptyState';
+import { NumericKeypad } from '../NumericKeypad';
 import { OfflineBadge } from '../OfflineBadge';
 import { ProgressBar } from '../ProgressBar';
 import { StatTile, type StatTrend } from '../StatTile';
@@ -79,5 +81,43 @@ describe('Toast', () => {
     await renderThemed(<Toast message="Saved on this device" />);
     const toast = screen.getByRole('alert', { name: 'Saved on this device' });
     expect(toast.props.accessibilityLiveRegion).toBe('polite');
+  });
+});
+
+describe('NumericKeypad', () => {
+  it('renders 9 digit keys plus 0 and backspace (3×4 layout, empty key for spacing)', async () => {
+    const onKey = jest.fn();
+    await renderThemed(<NumericKeypad onKey={onKey} />);
+    for (const digit of ['1', '2', '3', '4', '5', '6', '7', '8', '9', '0']) {
+      expect(screen.getByRole('button', { name: digit })).toBeTruthy();
+    }
+    expect(screen.getByRole('button', { name: 'Delete' })).toBeTruthy();
+  });
+
+  it('each key is 72 × 56 dp', async () => {
+    await renderThemed(<NumericKeypad onKey={jest.fn()} />);
+    const key = screen.getByRole('button', { name: '5' });
+    expect(touchSize(key)).toEqual({ width: 72, height: 56 });
+  });
+
+  it('fires onKey with the correct digit', async () => {
+    const onKey = jest.fn();
+    await renderThemed(<NumericKeypad onKey={onKey} />);
+    await fireEvent.press(screen.getByRole('button', { name: '7' }));
+    expect(onKey).toHaveBeenCalledWith('7');
+  });
+
+  it('fires onKey("backspace") for the Delete key', async () => {
+    const onKey = jest.fn();
+    await renderThemed(<NumericKeypad onKey={onKey} />);
+    await fireEvent.press(screen.getByRole('button', { name: 'Delete' }));
+    expect(onKey).toHaveBeenCalledWith('backspace');
+  });
+
+  it('disabled keypad ignores presses', async () => {
+    const onKey = jest.fn();
+    await renderThemed(<NumericKeypad onKey={onKey} disabled />);
+    await fireEvent.press(screen.getByRole('button', { name: '1' }));
+    expect(onKey).not.toHaveBeenCalled();
   });
 });

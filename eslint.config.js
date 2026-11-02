@@ -3,10 +3,26 @@
 const { defineConfig } = require('eslint/config');
 const expoFlat = require('eslint-config-expo/flat');
 const boundaries = require('eslint-plugin-boundaries');
+const prettier = require('eslint-config-prettier');
 
 module.exports = defineConfig([
   expoFlat,
+  prettier,
   { ignores: ['dist/*', '.expo/*', 'node_modules/*', 'coverage/*'] },
+  {
+    files: ['src/features/**/*.{ts,tsx}', 'src/core/ui/**/*.{ts,tsx}'],
+    ignores: ['src/features/**/tests/**', 'src/core/ui/tests/**'],
+    rules: {
+      'no-restricted-syntax': [
+        'error',
+        {
+          selector: 'Literal[value=/^#[0-9a-fA-F]{3,8}$/]',
+          message:
+            'Hard-coded hex colours are not allowed in components. Use theme tokens via useTheme().',
+        },
+      ],
+    },
+  },
   {
     files: ['src/**/*.{ts,tsx}'],
     plugins: { boundaries },
@@ -31,13 +47,14 @@ module.exports = defineConfig([
         {
           default: 'disallow',
           policies: [
-            // app wires everything: core + any feature's public index.ts
+            // app wires everything: core + any feature's public index.ts + feature.manifest.ts
             {
               from: { element: { type: 'app' } },
               allow: {
                 to: [
                   { element: { type: 'core' } },
                   { element: { type: 'feature', fileInternalPath: 'index.ts' } },
+                  { element: { type: 'feature', fileInternalPath: 'feature.manifest.ts' } },
                 ],
               },
             },

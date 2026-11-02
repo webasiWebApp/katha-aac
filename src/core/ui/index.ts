@@ -9,6 +9,7 @@ export { Dialog, type DialogProps } from './Dialog';
 export { EmptyState, type EmptyStateProps } from './EmptyState';
 export { Icon, iconNames, type IconName, type IconProps } from './Icon';
 export { ListRow, type ListRowKind, type ListRowProps } from './ListRow';
+export { MixedText, type MixedTextProps } from './MixedText';
 export { OfflineBadge, type OfflineBadgeProps } from './OfflineBadge';
 export { ProgressBar, type ProgressBarProps } from './ProgressBar';
 export {
@@ -20,3 +21,4 @@ export { StatTile, type StatTileProps, type StatTrend } from './StatTile';
 export { TextField, type TextFieldProps, type TextFieldState } from './TextField';
 export { Toast, type ToastProps } from './Toast';
 export { Toggle, type ToggleProps } from './Toggle';
+export { NumericKeypad, type NumericKeypadProps } from './NumericKeypad';

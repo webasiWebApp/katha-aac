@@ -9,11 +9,13 @@ import { ChildGridScreen } from '@/app/dev/screens/ChildGridScreen';
 import { ChildMessageScreen } from '@/app/dev/screens/ChildMessageScreen';
 import { FacilitatorScreen } from '@/app/dev/screens/FacilitatorScreen';
 import { TokensScreen } from '@/app/dev/screens/TokensScreen';
+import { ChildBoardScreen } from '@/app/screens/ChildBoardScreen';
 import { facText, fontFamily, ThemeProvider, useTheme, type ColorMode } from '@/core/theme';
 import { ListRow, SegmentedControl } from '@/core/ui';
 
 type GalleryRoutes = {
   Index: undefined;
+  ChildBoard: undefined;
   Tokens: undefined;
   ChildGrid: undefined;
   ChildMessage: undefined;
@@ -25,6 +27,11 @@ const Stack = createNativeStackNavigator<GalleryRoutes>();
 
 const SCREENS: { name: Exclude<keyof GalleryRoutes, 'Index'>; title: string; subtitle: string }[] =
   [
+    {
+      name: 'ChildBoard',
+      title: '▶ Child board (C-02)',
+      subtitle: 'Full child-facing screen: grid, core keys, message bar',
+    },
     {
       name: 'Tokens',
       title: 'Tokens, icons, pictograms',

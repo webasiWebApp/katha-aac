@@ -1,14 +1,11 @@
 {
   "expo": {
-    "name": "katha-aac",
+    "name": "Katha AAC",
     "slug": "katha-aac",
     "version": "1.0.0",
-    "orientation": "portrait",
+    "orientation": "default",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
-    "ios": {
-      "supportsTablet": true
-    },
     "android": {
       "adaptiveIcon": {
         "backgroundColor": "#E6F4FE",
@@ -17,7 +14,10 @@
         "monochromeImage": "./assets/android-icon-monochrome.png"
       },
       "predictiveBackGestureEnabled": false,
-      "package": "com.katha.aac"
+      "package": "com.katha.aac",
+      "versionCode": 1,
+      "allowBackup": false,
+      "permissions": []
     },
     "web": {
       "favicon": "./assets/favicon.png"
@@ -38,7 +38,11 @@
             "./assets/fonts/NotoSans_700Bold.ttf"
           ]
         }
-      ]
+      ],
+      "expo-secure-store",
+      "expo-audio",
+      "expo-sharing",
+      "expo-localization"
     ]
   }
 }

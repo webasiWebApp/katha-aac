@@ -93,6 +93,22 @@ describe('ListRow', () => {
     },
   );
 
+  it('subtitle wraps (no truncation) in a 328-wide container', async () => {
+    await renderThemed(
+      <ListRow
+        kind="navigation"
+        title="Long subtitle row"
+        subtitle="This is a very long subtitle that should wrap across multiple lines without being truncated at all."
+        onPress={() => undefined}
+      />,
+    );
+    const subtitle = screen.getByText(
+      'This is a very long subtitle that should wrap across multiple lines without being truncated at all.',
+    );
+    // numberOfLines must be undefined (no limit) or 0 — never 1.
+    expect(subtitle.props.numberOfLines ?? 0).not.toBe(1);
+  });
+
   it('toggle row contains a labelled switch and is 72 dp high', async () => {
     const onToggle = jest.fn();
     await renderThemed(

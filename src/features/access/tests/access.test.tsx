@@ -4,7 +4,7 @@ import { StyleSheet } from 'react-native';
 import { lightColors } from '@/core/theme';
 import { renderThemed, touchSize } from '@/core/theme/testUtils';
 
-import { AdultGate, ConsentBanner } from '../index';
+import { AdultGate, ConsentBanner, RoleBadge, type Role } from '../index';
 
 describe('AdultGate', () => {
   it('hold step is a 220 x 220 surface that fires after the hold', async () => {
@@ -88,5 +88,19 @@ describe('ConsentBanner', () => {
         'Data stays on this device. Research logging is optional and can be withdrawn at any time.',
       ),
     ).toBeTruthy();
+  });
+});
+
+describe('RoleBadge', () => {
+  const roles: { role: Role; label: string }[] = [
+    { role: 'parent',   label: 'Parent / Caregiver' },
+    { role: 'slp',      label: 'Speech-Language Pathologist' },
+    { role: 'educator', label: 'Educator / School staff' },
+    { role: 'ot',       label: 'Occupational Therapist' },
+  ];
+
+  it.each(roles)('$role renders with exact label "$label"', async ({ role, label }) => {
+    await renderThemed(<RoleBadge role={role} />);
+    expect(screen.getByLabelText(label)).toBeTruthy();
   });
 });

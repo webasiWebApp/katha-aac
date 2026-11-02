@@ -22,4 +22,15 @@ describe('Pictogram (placeholder artwork)', () => {
     await renderThemed(<Pictogram symbol="water" accessibilityLabel="water" />);
     expect(screen.getByLabelText('water')).toBeTruthy();
   });
+
+  it('renders a labelled fallback square when the SVG is missing at runtime (5.7)', async () => {
+    // Cast to bypass TypeScript — simulates a vocabulary symbol with no artwork yet.
+    const missing = 'unknown_symbol_xyz' as Parameters<typeof Pictogram>[0]['symbol'];
+    await renderThemed(
+      <Pictogram symbol={missing} fallbackLabel="නොදන්නා" accessibilityLabel="placeholder" />,
+    );
+    expect(screen.getByTestId('pictogram-fallback')).toBeTruthy();
+    expect(screen.getByText('නොදන්නා')).toBeTruthy();
+    expect(screen.getByLabelText('placeholder')).toBeTruthy();
+  });
 });

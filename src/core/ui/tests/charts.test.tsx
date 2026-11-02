@@ -59,6 +59,56 @@ describe('LineChart', () => {
   });
 });
 
+describe('LineChart (spec sample: 52,58,61,71,71,83)', () => {
+  const LINE_VALUES = [52, 58, 61, 71, 71, 83] as const;
+
+  it('renders the series with last-value label', async () => {
+    await renderThemed(
+      <LineChart
+        width={328}
+        height={180}
+        yTicks={[0, 20, 40, 60, 80, 100].map((v) => ({ value: v, label: String(v) }))}
+        xCaption="Sessions"
+        series={[
+          {
+            key: 'vocab',
+            label: 'Vocabulary',
+            color: '#2563EB',
+            values: LINE_VALUES as unknown as number[],
+          },
+        ]}
+        accessibilityLabel="Vocabulary growth"
+      />,
+    );
+    expect(screen.getByLabelText('Vocabulary growth')).toBeTruthy();
+    expect(screen.getByText('Sessions')).toBeTruthy();
+  });
+});
+
+describe('BarChart (spec sample: week 9,12,8,14,11,16,13)', () => {
+  const WEEK_VALUES = [9, 12, 8, 14, 11, 16, 13] as const;
+  const DAYS = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'] as const;
+
+  it('renders all 7 bars with their value and day labels', async () => {
+    await renderThemed(
+      <BarChart
+        width={328}
+        height={180}
+        accessibilityLabel="Messages per day"
+        bars={DAYS.map((d, i) => ({
+          key: d,
+          label: d,
+          value: WEEK_VALUES[i] as number,
+          valueLabel: String(WEEK_VALUES[i]),
+        }))}
+      />,
+    );
+    for (const d of DAYS) expect(screen.getByText(d)).toBeTruthy();
+    expect(screen.getByText('16')).toBeTruthy(); // max value
+    expect(screen.getByText('8')).toBeTruthy();  // min value
+  });
+});
+
 describe('BarChart', () => {
   it('renders value and category labels for every bar', async () => {
     const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
