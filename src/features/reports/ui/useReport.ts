@@ -7,6 +7,7 @@ import { presetPeriod, type PeriodPreset } from '@/core/time';
 import type { Period, Role } from '@/core/types/common';
 import { getLearner } from '@/features/access/index';
 import { getMeasures, type MeasureId } from '@/features/analytics/index';
+import { defaultCustomRange, validateCustomRange, type CustomRange } from '../domain/customPeriod';
 import { getReportDefinition, measureIdsOf } from '../registry';
 
 export function todayLocal(): string {
@@ -16,17 +17,27 @@ export function todayLocal(): string {
 
 export type PickerPreset = PeriodPreset | 'custom';
 
-/** Custom is not specified beyond the picker; it covers the last 90 days (assumption, see docs). */
-export function periodFor(preset: PickerPreset, today = todayLocal()): Period {
+/**
+ * Period for a picker choice. Custom uses the adult's From/To range; without a valid range it
+ * falls back to the last 90 days.
+ */
+export function periodFor(preset: PickerPreset, today = todayLocal(), custom?: CustomRange): Period {
   if (preset !== 'custom') return presetPeriod(preset, today);
-  const end = presetPeriod('today', today).end;
-  const start = new Date(Date.parse(`${end}T00:00:00Z`) - 90 * 86_400_000).toISOString().slice(0, 10);
-  return { start, end };
+  const range = custom ?? defaultCustomRange(today);
+  const checked = validateCustomRange(range, today);
+  if (checked.ok) return checked.period;
+  const fallback = validateCustomRange(defaultCustomRange(today), today);
+  return fallback.ok ? fallback.period : presetPeriod('30d', today);
 }
 
 export function usePeriod(initial: PickerPreset = '7d') {
   const [preset, setPreset] = useState<PickerPreset>(initial);
-  return { preset, setPreset, period: periodFor(preset) };
+  const [custom, setCustom] = useState<CustomRange>(() => defaultCustomRange(todayLocal()));
+  const applyCustom = (range: CustomRange) => {
+    setCustom(range);
+    setPreset('custom');
+  };
+  return { preset, setPreset, custom, applyCustom, period: periodFor(preset, todayLocal(), custom) };
 }
 
 /** Loads the measures of one role report for the signed-in learner. */

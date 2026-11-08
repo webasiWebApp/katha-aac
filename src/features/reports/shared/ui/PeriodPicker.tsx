@@ -1,7 +1,16 @@
+import { useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 
+import type { StringKey } from '@/core/i18n/en';
+import { t } from '@/core/i18n/t';
 import { facText, radius, space, useTheme } from '@/core/theme';
-import { Icon } from '@/core/ui';
+import { Button, Icon, TextField } from '@/core/ui';
+
+import {
+  validateCustomRange,
+  type CustomRange,
+  type CustomRangeError,
+} from '../../domain/customPeriod';
 
 export type PeriodPreset = 'today' | '7d' | '30d';
 
@@ -35,39 +44,112 @@ export interface PeriodSheetProps {
   selectedPreset: PeriodPreset | 'custom';
   onSelect: (preset: PeriodPreset | 'custom') => void;
   onClose: () => void;
+  /** Current custom range. With onApplyCustom, "Custom" opens two date fields. */
+  customRange?: CustomRange;
+  onApplyCustom?: (range: CustomRange) => void;
+  /** Local date used to validate the range (defaults to the device date). */
+  today?: string;
 }
 
-const PRESETS: { key: PeriodPreset | 'custom'; label: string }[] = [
-  { key: 'today', label: 'Today' },
-  { key: '7d', label: 'Last 7 days' },
-  { key: '30d', label: 'Last 30 days' },
-  { key: 'custom', label: 'Custom' },
+const PRESETS: { key: PeriodPreset | 'custom'; label: StringKey }[] = [
+  { key: 'today', label: 'dashboard.today' },
+  { key: '7d', label: 'dashboard.last_7d' },
+  { key: '30d', label: 'dashboard.last_30d' },
+  { key: 'custom', label: 'period.custom' },
 ];
 
-/** Bottom sheet for period selection. */
-export function PeriodSheet({ selectedPreset, onSelect, onClose }: PeriodSheetProps) {
+const ERROR_KEY: Record<CustomRangeError, StringKey> = {
+  format: 'period.error.format',
+  order: 'period.error.order',
+  future: 'period.error.future',
+  too_long: 'period.error.too_long',
+};
+
+function deviceToday(): string {
+  const d = new Date();
+  return new Date(d.getTime() - d.getTimezoneOffset() * 60_000).toISOString().slice(0, 10);
+}
+
+/** Bottom sheet for period selection: Today, Last 7 days, Last 30 days, Custom (two date fields). */
+export function PeriodSheet({
+  selectedPreset,
+  onSelect,
+  onClose,
+  customRange,
+  onApplyCustom,
+  today,
+}: PeriodSheetProps) {
   const { colors } = useTheme();
+  const [editing, setEditing] = useState(false);
+  const [from, setFrom] = useState(customRange?.from ?? '');
+  const [to, setTo] = useState(customRange?.to ?? '');
+  const [error, setError] = useState<CustomRangeError | null>(null);
+
+  const choose = (key: PeriodPreset | 'custom') => {
+    if (key === 'custom' && onApplyCustom) {
+      setEditing(true);
+      return;
+    }
+    onSelect(key);
+    onClose();
+  };
+
+  const apply = () => {
+    const range = { from: from.trim(), to: to.trim() };
+    const checked = validateCustomRange(range, today ?? deviceToday());
+    if (!checked.ok) {
+      setError(checked.error);
+      return;
+    }
+    setError(null);
+    onApplyCustom?.(range);
+    onClose();
+  };
+
   return (
     <View
       style={[styles.sheet, { backgroundColor: colors.fac.surface }]}
       accessibilityViewIsModal
-      accessibilityLabel="Select period"
+      accessibilityLabel={t('period.select')}
     >
       {PRESETS.map((p) => (
         <Pressable
           key={p.key}
-          onPress={() => { onSelect(p.key); onClose(); }}
+          onPress={() => choose(p.key)}
           accessibilityRole="radio"
-          accessibilityLabel={p.label}
+          accessibilityLabel={t(p.label)}
           accessibilityState={{ selected: selectedPreset === p.key }}
           style={styles.option}
         >
-          <Text style={[facText.body, { color: colors.fac.ink }]}>{p.label}</Text>
-          {selectedPreset === p.key && (
-            <Icon name="check" size={20} color={colors.fac.primary} />
-          )}
+          <Text style={[facText.body, { color: colors.fac.ink }]}>{t(p.label)}</Text>
+          {selectedPreset === p.key && <Icon name="check" size={20} color={colors.fac.primary} />}
         </Pressable>
       ))}
+      {editing ? (
+        <View style={styles.custom} testID="period-custom-form">
+          <TextField
+            label={t('period.from')}
+            value={from}
+            onChangeText={setFrom}
+            placeholder="YYYY-MM-DD"
+          />
+          <TextField
+            label={t('period.to')}
+            value={to}
+            onChangeText={setTo}
+            placeholder="YYYY-MM-DD"
+          />
+          {error ? (
+            <Text style={[facText.caption, { color: colors.fac.danger }]} accessibilityRole="alert">
+              {t(ERROR_KEY[error])}
+            </Text>
+          ) : null}
+          <View style={styles.actions}>
+            <Button label={t('common.cancel')} variant="ghost" onPress={() => setEditing(false)} />
+            <Button label={t('period.apply')} onPress={apply} />
+          </View>
+        </View>
+      ) : null}
     </View>
   );
 }
@@ -88,6 +170,8 @@ const styles = StyleSheet.create({
     padding: space.s16,
     gap: space.s4,
   },
+  custom: { gap: space.s12, paddingTop: space.s8 },
+  actions: { flexDirection: 'row', justifyContent: 'flex-end', gap: space.s8 },
   option: {
     height: 48,
     flexDirection: 'row',

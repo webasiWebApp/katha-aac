@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { formatPeriod } from '@/core/time';
 import { Text } from 'react-native';
 
 import { useAppContext } from '@/core/app/AppContext';
@@ -75,7 +76,7 @@ export function ShareScreen({
               <>
                 <Card
                   title={t(report.data.definition.titleKey)}
-                  body={`${report.data.learner.displayName} · ${report.data.learner.code} · ${period.start} – ${period.end}`}
+                  body={`${report.data.learner.displayName} · ${report.data.learner.code} · ${formatPeriod(period)}`}
                 />
                 <ConsentBanner title={t('share.consent_required')} body={t('share.consent_body')} />
                 <ListRow kind="navigation" title={t('share.save')} icon="download" onPress={() => setPending('save')} />

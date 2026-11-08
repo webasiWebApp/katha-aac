@@ -1,4 +1,5 @@
 import { StyleSheet, Text, View } from 'react-native';
+import { formatPeriod } from '@/core/time';
 
 import { t } from '@/core/i18n/t';
 import { facText, radius, space, useTheme } from '@/core/theme';
@@ -37,7 +38,7 @@ export function ReportView({ definition, results, learner, period, enabledSectio
         <RoleBadge role={definition.role} />
         <Text style={[facText.title, { color: colors.fac.ink }]}>{t(definition.titleKey)}</Text>
         <Text style={[facText.body, { color: colors.fac.inkMuted }]}>{`${learner.displayName} · ${learner.code}`}</Text>
-        <Text style={[facText.caption, { color: colors.fac.inkMuted }]}>{`${period.start} – ${period.end}`}</Text>
+        <Text style={[facText.caption, { color: colors.fac.inkMuted }]}>{formatPeriod(period)}</Text>
         <Text style={[facText.caption, { color: colors.fac.inkMuted }]}>
           {t('report.header.sessions', { sessions: sessionCount, days })}
         </Text>

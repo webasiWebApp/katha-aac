@@ -28,7 +28,26 @@ npx expo run:android --variant release
 
 ## Signing
 
-TODO(human): Generate keystore; store securely outside the repository. Do not commit any `.jks` or `.keystore` file.
+TODO(human): H-08 generates the real upload keystore and keeps it outside the repository (two copies, with the project lead). Do not commit any `.jks` or `.keystore` file (`.gitignore` already blocks `*.jks`).
+
+Local release builds are signed by the config plugin `plugins/withReleaseSigning.js` (listed in `app.json`, so it survives `expo prebuild --clean`). It reads four values from `~/.gradle/gradle.properties` or the environment:
+
+| Name | Value |
+| --- | --- |
+| `KATHA_UPLOAD_STORE_FILE` | absolute path to the upload keystore |
+| `KATHA_UPLOAD_STORE_PASSWORD` | keystore password |
+| `KATHA_UPLOAD_KEY_ALIAS` | key alias |
+| `KATHA_UPLOAD_KEY_PASSWORD` | key password |
+
+```bash
+npx expo prebuild --platform android
+cd android && ./gradlew bundleRelease     # AAB for Play: app/build/outputs/bundle/release/app-release.aab
+./gradlew assembleRelease                 # APK for the tablet: app/build/outputs/apk/release/app-release.apk
+```
+
+If `KATHA_UPLOAD_STORE_FILE` is not set, the release falls back to the debug key and Gradle prints `Katha AAC: KATHA_UPLOAD_STORE_FILE is not set; release is signed with the DEBUG key. Do not upload this build.` EAS builds ignore this and use EAS-managed credentials.
+
+On Windows, if AAPT2 fails with "Daemon startup failed", run `./gradlew --stop` and build again with `--max-workers=4`.
 
 ## Google Play Console
 

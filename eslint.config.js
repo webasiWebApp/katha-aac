@@ -8,7 +8,7 @@ const prettier = require('eslint-config-prettier');
 module.exports = defineConfig([
   expoFlat,
   prettier,
-  { ignores: ['dist/*', '.expo/*', 'node_modules/*', 'coverage/*'] },
+  { ignores: ['dist/*', '.expo/*', 'node_modules/*', 'coverage/*', 'web-preview/*'] },
   {
     files: ['src/features/**/*.{ts,tsx}', 'src/core/ui/**/*.{ts,tsx}'],
     ignores: ['src/features/**/tests/**', 'src/core/ui/tests/**'],

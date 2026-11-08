@@ -130,13 +130,13 @@ Format: `- [ ] T-NNN description — date note` when done.
 - [x] T-151 Child view settings (ST-1) — 2026-11-08 ST-1 persists grid/hand/idle/reduced motion/adult check; ChildBoardScreen passes them to the board
 - [x] T-152 Voice and audio (ST-2) — 2026-11-08 ST-2 voice status, clip count, test sentence; status text tested
 - [x] T-153 Data and retention (ST-3) — 2026-11-08 ST-3 delete older than 6/12/24 months and delete all (parent, PIN); retention tested on fixture data
-- [x] T-154 About (ST-4) — 2026-11-08 ST-4 versions, export error log (parent only, share sheet text file); licences file not generated (M-10)
+- [x] T-154 About (ST-4) — 2026-11-08 ST-4 versions, export error log (parent only, share sheet text file); licences: scripts/gen-licences.js writes assets/licences.json (license-checker shape, 496 packages), About lists them on request; render + data tests
 - [x] T-155 Vocabulary (FB-06) — 2026-11-08 FB-06 read-only list of the active vocabulary; tested
 
 ## P14. Hardening
 - [x] T-160 Accessibility — 2026-11-08 contrast test: 17 text/background token pairs >= 4.5:1 in Light; TalkBack NOT RUN (needs device); a full audit of every pressable label is not automated
-- [ ] T-161 Performance — NOT RUN (needs device) 2026-11-08 tap-to-feedback and tap-to-audio timings not measured; grid cells are plain components (no memoisation work done)
-- [x] T-162 Security and privacy review — 2026-11-08 PRIVACY.md safeguards table filled; app.json now blocks INTERNET, RECORD_AUDIO, SYSTEM_ALERT_WINDOW; merged release manifest and 'DB unreadable without key' still need a device build
+- [ ] T-161 Performance — NOT RUN (needs device) 2026-11-08 grid memoised (BoardGrid React.memo + stable cell callback; Jest proves 0 cell re-renders on composer taps); tap-to-feedback and tap-to-audio timings still need the tablet
+- [x] T-162 Security and privacy review — 2026-11-08 PRIVACY.md safeguards filled with evidence; release APK inspected with aapt2: permissions only MODIFY_AUDIO_SETTINGS + WAKE_LOCK, allowBackup=false, no services, SQLCipher build flag on. 'DB unreadable without key' still a device check
 - [x] T-163 Error states — 2026-11-08 LoadGate loading/error with Try again on every data screen; 12 screens tested with a failing database
 - [ ] T-164 Robustness — NOT RUN (needs device) 2026-11-08 Jest covers commit atomicity, duplicate ids and orphan-session restart; real kill-the-app tests during speaking, commit and export were not run
 - [ ] T-165 Upgrade test — NOT RUN (needs device) 2026-11-08 Jest upgrade test (dummy migration 999_test keeps data); install-over-install on a device not run
@@ -149,8 +149,8 @@ Format: `- [ ] T-NNN description — date note` when done.
 - [x] T-174 Issue list — 2026-11-08 docs/ISSUES.md ranked Critical/High/Medium/Low
 
 ## P16. Release and handover
-- [x] T-180 App identity — 2026-11-08 version 1.0.0 (code 1); About shows app, schema and vocabulary versions; placeholder icons are the existing assets (H-05 replaces them); release build NOT RUN
-- [ ] T-181 Release build — NOT RUN (needs device) 2026-11-08 no EAS or local release build was run; RELEASE.md documents keystore handling and steps
+- [x] T-180 App identity — 2026-11-08 placeholder 'K' on fac/primary icon, adaptive icon (fg/bg/monochrome) and splash in assets/app (scripts/gen-app-icons.py); version 1.0.0 (code 1) confirmed in the release APK badging; About shows app, schema and vocabulary versions
+- [ ] T-181 Release build — NOT RUN (needs device) 2026-11-08 local signed release built: app-release.aab (95 MB) and app-release.apk (126 MB) via gradlew bundleRelease/assembleRelease after expo prebuild; signing from plugins/withReleaseSigning.js verified with a throwaway test key (apksigner/keytool show the same cert); installing on the tablet not run. Real upload key: H-08
 - [x] T-182 Store and privacy documents — 2026-11-08 PRIVACY.md and RELEASE.md completed with Play data safety answers and testing steps; contact details and policy URL marked TODO(human)
 - [x] T-183 Documentation — 2026-11-08 README (setup, run, test, build, demo data) and ARCHITECTURE (module map, data flow, add a role report, ship a vocabulary version)
-- [ ] T-184 Final acceptance — STOP: human review — NOT RUN (needs device) 2026-11-08 npm run check equivalents run: tsc 0 errors, eslint 0 errors, Jest 40 suites and 614 tests pass (1 env-gated sample generator skipped); coverage 98.8% lines in features/*/domain and analytics (above 90%). Maestro flows and the device checklist were not run (BLOCKER-001). Open items: docs/ISSUES.md and docs/BLOCKERS.md. STOP review pending with the human
+- [ ] T-184 Final acceptance — STOP: human review — NOT RUN (needs device) 2026-11-08 tsc 0 errors, eslint 0 errors, Jest 42 suites / 631 tests pass (1 env-gated skipped); coverage 98.86% lines in features/*/domain and analytics; signed release AAB and APK build. Maestro flows and the device checklist need a tablet (BLOCKER-001). Open items: docs/ISSUES.md, docs/BLOCKERS.md

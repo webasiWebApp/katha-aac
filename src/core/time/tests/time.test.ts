@@ -179,3 +179,13 @@ test('toLocal: +330 offset shifts by 5h30m', () => {
   expect(d.getUTCHours()).toBe(5);
   expect(d.getUTCMinutes()).toBe(30);
 });
+
+describe('formatPeriod (display, inclusive end)', () => {
+  it('shows the last day of an end-exclusive period', () => {
+    const { formatPeriod } = jest.requireActual<typeof import('../time')>('../time');
+    expect(formatPeriod({ start: '2026-11-02', end: '2026-11-09' })).toBe('2026-11-02 – 2026-11-08');
+    expect(formatPeriod({ start: '2026-10-01', end: '2026-11-02' })).toBe('2026-10-01 – 2026-11-01');
+    expect(formatPeriod({ start: '2026-11-08', end: '2026-11-09' })).toBe('2026-11-08');
+    expect(formatPeriod({ start: '2026-12-31', end: '2027-01-01' })).toBe('2026-12-31');
+  });
+});

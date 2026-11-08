@@ -25,8 +25,8 @@ export interface ChildButtonProps {
 
 const PICTOGRAM: Record<ChildButtonKind, PictogramName> = {
   speak: 'speak',
-  // Placeholder until the designer delivers the Replay pictogram (H-05).
-  replay: 'back',
+  // Placeholder art drawn in-house (assets/pictograms/replay.svg) until the designer delivers it (H-05).
+  replay: 'replay',
   undo: 'undo',
   clear: 'clear',
 };

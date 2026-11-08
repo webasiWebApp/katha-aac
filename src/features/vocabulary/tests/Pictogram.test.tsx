@@ -5,8 +5,9 @@ import { renderThemed } from '@/core/theme/testUtils';
 import { Pictogram, pictogramNames } from '../index';
 
 describe('Pictogram (placeholder artwork)', () => {
-  it('has all 45 symbols from the Figma pictogram frame (3:230)', () => {
-    expect(pictogramNames).toHaveLength(45);
+  it('has the 45 symbols from the Figma pictogram frame (3:230) plus the in-house Replay art', () => {
+    expect(pictogramNames).toHaveLength(46);
+    expect(pictogramNames).toContain('replay');
   });
 
   it.each(pictogramNames)('renders "%s"', async (symbol) => {

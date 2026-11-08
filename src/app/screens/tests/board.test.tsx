@@ -240,3 +240,20 @@ describe('break, idle return, gate (T-077, T-078)', () => {
     expect(onGate).not.toHaveBeenCalled();
   });
 });
+
+describe('grid memoisation (T-161)', () => {
+  it('does not re-render grid cells when the composer draft changes', async () => {
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
+    const cellModule = require('@/features/board/ui/SymbolCell') as typeof import('@/features/board/ui/SymbolCell');
+    const spy = jest.spyOn(cellModule, 'SymbolCell');
+    await board();
+    const afterMount = spy.mock.calls.length;
+    expect(afterMount).toBeGreaterThan(0);
+    await tap('මට');
+    await tap('වතුර');
+    expect(events('symbol_selected')).toHaveLength(2);
+    // Only the message bar changes; the 12 grid cells keep their previous render.
+    expect(spy.mock.calls.length).toBe(afterMount);
+    spy.mockRestore();
+  });
+});

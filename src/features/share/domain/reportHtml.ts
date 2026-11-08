@@ -1,4 +1,5 @@
 import { t } from '@/core/i18n/t';
+import { formatPeriod } from '@/core/time';
 import type { Period } from '@/core/types/common';
 import { registry, type MeasureResult } from '@/features/analytics/index';
 import { LIMITATION_TEXT, planningIdea, type ReportDefinition, type ReportSection } from '@/features/reports/index';
@@ -172,7 +173,7 @@ export function buildReportHtml(def: ReportDefinition, results: Results, meta: R
   return `<!doctype html><html><head><meta charset="utf-8"><title>${esc(t(def.titleKey))}</title><style>${meta.fontCss ?? ''}${CSS}</style></head><body>
 <h1>${esc(t(def.titleKey))}</h1>
 <div>${esc(meta.learnerName)} · ${esc(meta.code)}${meta.fictional ? ` <span class="sample">${esc(t('common.sample_data'))}</span>` : ''}</div>
-<div class="muted">${esc(meta.period.start)} – ${esc(meta.period.end)} · ${esc(t('report.header.sessions', { sessions: sessions?.value ?? 0, days }))} · ${esc(meta.generatedOn)}</div>
+<div class="muted">${esc(formatPeriod(meta.period))} · ${esc(t('report.header.sessions', { sessions: sessions?.value ?? 0, days }))} · ${esc(meta.generatedOn)}</div>
 <div class="notice">${esc(LIMITATION_TEXT)}</div>
 <h2>${esc(t('report.glance'))}</h2><p class="muted">${esc(t(def.subtitleKey))}</p>${glanceTable}
 ${sections.map((s) => sectionHtml(s, results, idea?.text ?? null)).join('\n')}

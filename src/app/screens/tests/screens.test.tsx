@@ -102,9 +102,9 @@ describe('dashboard, builder, history, share', () => {
 
   it('history lists messages and filters', async () => {
     await renderScreen(<HistoryScreen />, parent());
-    await waitFor(() => expect(screen.queryAllByText(/symbols/).length).toBeGreaterThan(0));
+    await waitFor(() => expect(screen.queryAllByText(/ symbols? /).length).toBeGreaterThan(0));
     await fireEvent.press(screen.getByText('Stored phrases'));
-    await waitFor(() => expect(screen.queryAllByText(/symbols/).length).toBeGreaterThan(0));
+    await waitFor(() => expect(screen.queryAllByText(/ symbols? /).length).toBeGreaterThan(0));
   });
 
   it('history is hidden from a role without the history permission', async () => {
@@ -278,10 +278,31 @@ describe('settings screens', () => {
     expect(screen.queryByText('Export error log')).toBeNull();
   });
 
+  it('about lists the bundled open-source licences on request (T-154)', async () => {
+    await renderScreen(<AboutScreen />, parent());
+    const show = await screen.findByText(/^Show open-source licences \(\d+\)$/);
+    expect(screen.queryByText('react-native-svg@15.16.0')).toBeNull();
+    await fireEvent.press(show);
+    expect(screen.getByText(/^react-native@/)).toBeTruthy();
+    expect(screen.getByText('Hide open-source licences')).toBeTruthy();
+  });
+
   it('vocabulary lists every symbol of the active version', async () => {
     await renderScreen(<VocabularyScreen />, parent());
     expect(await screen.findByText('Draft vocabulary. Labels are checked by a speech-language pathologist before release.')).toBeTruthy();
     expect(screen.getByLabelText('වතුර, water')).toBeTruthy();
+  });
+});
+
+describe('custom period (M-4)', () => {
+  it('history uses the custom From/To range and shows it on the picker', async () => {
+    await renderScreen(<HistoryScreen />, parent());
+    await fireEvent.press(await screen.findByRole('button', { name: 'Period: Last 7 days' }));
+    await fireEvent.press(screen.getByRole('radio', { name: 'Custom' }));
+    await fireEvent.changeText(screen.getByLabelText('From (YYYY-MM-DD)'), '2025-12-20');
+    await fireEvent.changeText(screen.getByLabelText('To (YYYY-MM-DD)'), '2026-01-08');
+    await fireEvent.press(screen.getByText('Apply'));
+    expect(await screen.findByRole('button', { name: 'Period: 20 Dec 2025 – 08 Jan 2026' })).toBeTruthy();
   });
 });
 

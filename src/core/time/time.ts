@@ -134,3 +134,12 @@ function msToDate(ms: number): string {
   const day = String(d.getUTCDate()).padStart(2, '0');
   return `${y}-${m}-${day}`;
 }
+
+/**
+ * Period for display: periods are end-exclusive (section 4), people read dates inclusively.
+ * { start: '2026-11-02', end: '2026-11-09' } -> "2026-11-02 – 2026-11-08"; one day -> "2026-11-08".
+ */
+export function formatPeriod(period: Period): string {
+  const last = msToDate(dateToMs(period.end) - 86_400_000);
+  return last <= period.start ? period.start : `${period.start} – ${last}`;
+}

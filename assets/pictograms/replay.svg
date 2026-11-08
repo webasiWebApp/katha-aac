@@ -1,0 +1,9 @@
+<svg width="96" height="96" viewBox="0 0 96 96" fill="none" xmlns="http://www.w3.org/2000/svg">
+<rect width="96" height="96" fill="#F5F5F5"/>
+<g id="pict/replay">
+<path d="M48 84C66.8 84 82 68.8 82 50C82 31.2 66.8 16 48 16C29.2 16 14 31.2 14 50C14 68.8 29.2 84 48 84Z" fill="#E9EEF3"/>
+<path d="M22.0 35.0 A30 30 0 1 0 38.9 21.2" stroke="#1F2933" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M51.0 28.2 L38.9 21.2 L47.9 10.4" stroke="#1F2933" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
+<path d="M42 39L42 61L61 50Z" fill="#1F2933" stroke="#1F2933" stroke-width="3" stroke-linejoin="round"/>
+</g>
+</svg>

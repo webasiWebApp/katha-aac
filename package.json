@@ -3,6 +3,7 @@
   "version": "1.0.0",
   "main": "index.ts",
   "dependencies": {
+    "@expo/metro-runtime": "~58.0.17",
     "@react-navigation/bottom-tabs": "^7.21.0",
     "@react-navigation/native": "^7.5.1",
     "@react-navigation/native-stack": "^7.21.0",
@@ -24,12 +25,14 @@
     "expo-sqlite": "~58.0.15",
     "expo-status-bar": "~58.0.4",
     "react": "19.3.0",
+    "react-dom": "19.3.0",
     "react-native": "0.88.1",
     "react-native-gesture-handler": "~3.3.0",
     "react-native-reanimated": "4.7.1",
     "react-native-safe-area-context": "~5.11.1",
     "react-native-screens": "~4.30.1",
     "react-native-svg": "15.16.0",
+    "react-native-web": "^0.21.4",
     "react-native-worklets": "0.13.0",
     "zustand": "^5.0.16"
   },
@@ -65,7 +68,10 @@
     "check": "npm run typecheck && npm run lint && npm run test",
     "e2e": "maestro test e2e",
     "gen:audio": "node scripts/gen-audio-index.js",
-    "prebuild": "npm run gen:audio"
+    "prebuild": "npm run gen:audio && npm run gen:licences",
+    "gen:licences": "node scripts/gen-licences.js",
+    "gen:icons": "python scripts/gen-app-icons.py",
+    "web:preview": "node scripts/web-preview-proxy.js"
   },
   "private": true
 }

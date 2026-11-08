@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { memo, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import {
   Pressable,
   StyleSheet,
@@ -30,8 +30,13 @@ import {
 } from '@/features/composer/index';
 import { appendEvent } from '@/features/event-log/index';
 import { IntentConfirmChip } from '@/features/observations/index';
-import { Pictogram, getActiveVocabulary, type PictogramName } from '@/features/vocabulary/index';
-import { computeGrid } from '../domain/gridLayout';
+import {
+  Pictogram,
+  getActiveVocabulary,
+  type PictogramName,
+  type VocabularyContent,
+} from '@/features/vocabulary/index';
+import { computeGrid, type GridResult } from '../domain/gridLayout';
 import {
   GATE_AREA,
   gateStateMachine,
@@ -96,7 +101,10 @@ function Board(props: BoardScreenProps & { width: number; height: number }) {
   const [checkFor, setCheckFor] = useState<string | null>(null);
   const [highlight, setHighlight] = useState(-1);
 
-  const grid = computeGrid({ width, height, gridSize: props.gridSize });
+  const grid = useMemo(
+    () => computeGrid({ width, height, gridSize: props.gridSize }),
+    [width, height, props.gridSize],
+  );
   useEffect(() => {
     if (grid.fellBack) logError('board', 'grid_too_small', new Error(props.gridSize));
   }, [grid.fellBack, props.gridSize]);
@@ -202,45 +210,22 @@ function Board(props: BoardScreenProps & { width: number; height: number }) {
     return -1;
   })();
 
-  const folderTarget = (id: string) => vocabulary.folders.find((f) => f.symbolId === id)?.opensPage;
-
-  const renderCell = (id: string | null, index: number) => {
-    const common = { size: 'L' as const, width: grid.cellW, height: grid.cellH };
-    if (id === null) {
-      return <SymbolCell key={`h${index}`} {...common} state="hidden" label="" pictogram="me" wordClass="thing" />;
-    }
-    const sym = vocabulary.symbols.find((s) => s.id === id);
-    if (sym) {
-      const opens = folderTarget(id);
-      return (
-        <SymbolCell
-          key={id}
-          {...common}
-          size={grid.labelPlacement === 'right' ? 'S' : grid.cols >= 5 ? 'M' : 'L'}
-          label={sym.label}
-          pictogram={sym.pictogram as PictogramName}
-          wordClass={sym.category}
-          opensPage={!!opens}
-          onPress={() => (opens ? openPage(opens, 'folder') : composer.tapWord(id, 'grid', index))}
-        />
-      );
-    }
-    const phrase = vocabulary.storedPhrases.find((p) => p.id === id);
-    if (phrase) {
-      return (
-        <SymbolCell
-          key={id}
-          {...common}
-          size={grid.cols >= 5 ? 'M' : 'L'}
-          label={phrase.label}
-          pictogram={phrase.pictogram as PictogramName}
-          wordClass="core"
-          onPress={() => composer.tapPhrase(id, index)}
-        />
-      );
-    }
-    return <SymbolCell key={`x${index}`} {...common} state="hidden" label="" pictogram="me" wordClass="thing" />;
-  };
+  // Cell presses go through a ref so the memoised grid keeps a stable callback and does not
+  // re-render on composer changes (T-161).
+  const cellPress = useRef<(id: string, index: number) => void>(() => undefined);
+  useLayoutEffect(() => {
+    cellPress.current = (id: string, index: number) => {
+      const opens = vocabulary.folders.find((f) => f.symbolId === id)?.opensPage;
+      if (opens) {
+        openPage(opens, 'folder');
+      } else if (!vocabulary.symbols.some((s) => s.id === id) && vocabulary.storedPhrases.some((p) => p.id === id)) {
+        composer.tapPhrase(id, index);
+      } else {
+        composer.tapWord(id, 'grid', index);
+      }
+    };
+  });
+  const onCellPress = useCallback((id: string, index: number) => cellPress.current(id, index), []);
 
   // ── Core keys ──────────────────────────────────────────────────────────────
   const coreKey = (k: string, kind: 'core' | 'nav', onPress: () => void): CoreKeyRowItem | null => {
@@ -324,7 +309,13 @@ function Board(props: BoardScreenProps & { width: number; height: number }) {
   const gate = useRef<GateState>({ phase: 'idle' });
   const gateTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const onGateTouch = (e: GestureResponderEvent) => {
-    const touches: Point[] = e.nativeEvent.touches.map((tt) => ({ id: String(tt.identifier), x: tt.locationX, y: tt.locationY }));
+    // Android gives an array; browsers give a TouchList, so copy it first. Browser touches have
+    // no locationX/Y; pageX/Y equal them here because the gate area sits at the screen origin.
+    const touches: Point[] = Array.from(e.nativeEvent.touches as ArrayLike<GestureResponderEvent['nativeEvent']>).map((tt) => ({
+      id: String(tt.identifier),
+      x: tt.locationX ?? tt.pageX,
+      y: tt.locationY ?? tt.pageY,
+    }));
     const before = gate.current;
     gate.current = gateStateMachine(before, { type: 'touches', touches, now: Date.now() });
     if (gate.current.phase === 'done') {
@@ -371,11 +362,7 @@ function Board(props: BoardScreenProps & { width: number; height: number }) {
       <View style={[styles.messageRow, { height: MSG_ROW }]}>{row}</View>
 
       <View style={[styles.grid, { gap: grid.gap, opacity: speaking ? 0.7 : 1 }]} testID="board-grid">
-        {Array.from({ length: grid.rows }, (_, r) => (
-          <View key={r} style={{ flexDirection: 'row', gap: grid.gap }}>
-            {cells.slice(r * grid.cols, (r + 1) * grid.cols).map((id, c) => renderCell(id, r * grid.cols + c))}
-          </View>
-        ))}
+        <BoardGrid cells={cells} grid={grid} vocabulary={vocabulary} onCellPress={onCellPress} />
         {checkFor && chipPos ? (
           <View
             testID="intent-chip"
@@ -432,6 +419,63 @@ function Board(props: BoardScreenProps & { width: number; height: number }) {
     </View>
   );
 }
+
+interface BoardGridProps {
+  cells: (string | null)[];
+  grid: GridResult;
+  vocabulary: VocabularyContent;
+  onCellPress: (id: string, index: number) => void;
+}
+
+/** The symbol grid. Memoised: props change only on page, grid size or vocabulary changes. */
+const BoardGrid = memo(function BoardGrid({ cells, grid, vocabulary, onCellPress }: BoardGridProps) {
+  const renderCell = (id: string | null, index: number) => {
+    const common = { size: 'L' as const, width: grid.cellW, height: grid.cellH };
+    if (id === null) {
+      return <SymbolCell key={`h${index}`} {...common} state="hidden" label="" pictogram="me" wordClass="thing" />;
+    }
+    const sym = vocabulary.symbols.find((s) => s.id === id);
+    if (sym) {
+      const opens = vocabulary.folders.some((f) => f.symbolId === id);
+      return (
+        <SymbolCell
+          key={id}
+          {...common}
+          size={grid.labelPlacement === 'right' ? 'S' : grid.cols >= 5 ? 'M' : 'L'}
+          label={sym.label}
+          pictogram={sym.pictogram as PictogramName}
+          wordClass={sym.category}
+          opensPage={opens}
+          onPress={() => onCellPress(id, index)}
+        />
+      );
+    }
+    const phrase = vocabulary.storedPhrases.find((p) => p.id === id);
+    if (phrase) {
+      return (
+        <SymbolCell
+          key={id}
+          {...common}
+          size={grid.cols >= 5 ? 'M' : 'L'}
+          label={phrase.label}
+          pictogram={phrase.pictogram as PictogramName}
+          wordClass="core"
+          onPress={() => onCellPress(id, index)}
+        />
+      );
+    }
+    return <SymbolCell key={`x${index}`} {...common} state="hidden" label="" pictogram="me" wordClass="thing" />;
+  };
+  return (
+    <>
+      {Array.from({ length: grid.rows }, (_, r) => (
+        <View key={r} style={{ flexDirection: 'row', gap: grid.gap }}>
+          {cells.slice(r * grid.cols, (r + 1) * grid.cols).map((id, c) => renderCell(id, r * grid.cols + c))}
+        </View>
+      ))}
+    </>
+  );
+});
 
 const styles = StyleSheet.create({
   center: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 16, padding: 24 },

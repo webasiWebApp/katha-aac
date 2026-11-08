@@ -1,5 +1,6 @@
 import { StyleSheet, Text, View } from 'react-native';
 
+import { t } from '@/core/i18n/t';
 import { facText, space, useTheme } from '@/core/theme';
 import { Chip } from '@/core/ui';
 
@@ -25,8 +26,13 @@ export function MessageHistoryRow({ entry, timeLabel }: MessageHistoryRowProps) 
   const { colors } = useTheme();
   const answerConfig = entry.answer ? ANSWER_CHIP[entry.answer] : null;
   const source =
-    entry.source === 'independent' ? 'independent' : entry.source === 'prompted' ? 'prompted' : 'not tagged';
-  const meta = `${timeLabel} · ${entry.symbolCount} symbols · ${source}`;
+    entry.source === 'independent'
+      ? t('history.source_independent')
+      : entry.source === 'prompted'
+        ? t('history.source_prompted')
+        : t('history.source_not_tagged');
+  const count = t(entry.symbolCount === 1 ? 'history.symbol_one' : 'history.symbol_other', { n: entry.symbolCount });
+  const meta = `${timeLabel} · ${count} · ${source}`;
 
   return (
     <View

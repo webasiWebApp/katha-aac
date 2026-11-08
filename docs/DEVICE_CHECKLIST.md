@@ -46,6 +46,7 @@ Build type: TODO(human) (development build for this checklist)
 ## Performance (record milliseconds)
 - [ ] Tap to pressed-feedback: ___ms (target < 100 ms) — **NOT RUN (needs device)**
 - [ ] Tap to word audio start: ___ms (target < 300 ms) — **NOT RUN (needs device)**
+- [x] Grid cells memoised; composer changes do not re-render the grid — **Pass (Jest)** 2026-11-08: `BoardGrid` is `React.memo` with a stable cell callback; `board.test.tsx` "grid memoisation (T-161)" counts 12 cell renders on mount and 0 more after two taps (48 without memo)
 - [ ] getMeasures (30-day period, all measures): ___ms (target < 300 ms) — **NOT RUN (needs device)**; Jest: 25 ms for 365 days x 3 sessions x 40 events (T-128); tablet value still to be measured
 
 ## TalkBack

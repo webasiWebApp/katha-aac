@@ -18,6 +18,7 @@ import {
 } from '@/features/access/index';
 import { devicePlatformSpeak, getAudioService } from '@/features/audio/index';
 import { getActiveVocabularyId } from '@/features/vocabulary/index';
+import { loadLicences } from '../data/licences';
 import { loadDemoData } from '../domain/demoData';
 
 export const APP_VERSION = '1.0.0';
@@ -170,6 +171,8 @@ export function DataRetentionScreen({ onBack }: { onBack?: () => void }) {
 
 /** ST-4 About. */
 export function AboutScreen({ onBack, onExportLog }: { onBack?: () => void; onExportLog?: (text: string) => void }) {
+  const [showLicences, setShowLicences] = useState(false);
+  const [licences] = useState(loadLicences);
   const db = useDb();
   const { role } = useAppContext();
   const load = useLoad(
@@ -204,6 +207,14 @@ export function AboutScreen({ onBack, onExportLog }: { onBack?: () => void; onEx
               />
             ) : null}
             <Text>{t('about.licences_note')}</Text>
+            <Button
+              label={showLicences ? t('about.licences_hide') : t('about.licences_show', { count: licences.length })}
+              variant="ghost"
+              onPress={() => setShowLicences((v) => !v)}
+            />
+            {showLicences
+              ? licences.map((l) => <ListRow key={l.pkg} kind="value" title={l.pkg} value={l.licenses} />)
+              : null}
           </>
         ) : null}
       </LoadGate>

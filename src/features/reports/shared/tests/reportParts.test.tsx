@@ -93,6 +93,43 @@ describe('PeriodSheet', () => {
     await fireEvent.press(today);
     expect(onSelect).toHaveBeenCalledWith('today');
   });
+
+  it('Custom opens two date fields, rejects a bad range and applies a good one', async () => {
+    const onSelect = jest.fn();
+    const onClose = jest.fn();
+    const onApplyCustom = jest.fn();
+    await renderThemed(
+      <PeriodSheet
+        selectedPreset="7d"
+        onSelect={onSelect}
+        onClose={onClose}
+        customRange={{ from: '2026-08-11', to: '2026-11-08' }}
+        onApplyCustom={onApplyCustom}
+        today="2026-11-08"
+      />,
+    );
+    await fireEvent.press(screen.getByRole('radio', { name: 'Custom' }));
+    expect(screen.getByTestId('period-custom-form')).toBeTruthy();
+    expect(onSelect).not.toHaveBeenCalled();
+    const from = screen.getByLabelText('From (YYYY-MM-DD)');
+    const to = screen.getByLabelText('To (YYYY-MM-DD)');
+    expect(from.props.value).toBe('2026-08-11');
+
+    await fireEvent.changeText(from, '2026-11-01');
+    await fireEvent.changeText(to, '2026-10-01');
+    await fireEvent.press(screen.getByText('Apply'));
+    expect(screen.getByText('The From date must be on or before the To date.')).toBeTruthy();
+    expect(onApplyCustom).not.toHaveBeenCalled();
+
+    await fireEvent.changeText(to, '2026-11-20');
+    await fireEvent.press(screen.getByText('Apply'));
+    expect(screen.getByText('The To date cannot be after today.')).toBeTruthy();
+
+    await fireEvent.changeText(to, '2026-11-07');
+    await fireEvent.press(screen.getByText('Apply'));
+    expect(onApplyCustom).toHaveBeenCalledWith({ from: '2026-11-01', to: '2026-11-07' });
+    expect(onClose).toHaveBeenCalledTimes(1);
+  });
 });
 
 // --- SectionHeader ---
@@ -175,5 +212,12 @@ describe('MessageHistoryRow', () => {
       />,
     );
     expect(screen.getByLabelText('Not answered')).toBeTruthy();
+  });
+
+  it('uses the singular for one symbol', async () => {
+    await renderThemed(
+      <MessageHistoryRow entry={{ ...entry, symbolCount: 1, source: 'not_recorded' }} timeLabel="08 Nov · 05:02" />,
+    );
+    expect(screen.getByText('08 Nov · 05:02 · 1 symbol · not tagged')).toBeTruthy();
   });
 });

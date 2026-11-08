@@ -16,6 +16,10 @@ export function initErrorLog(db: Db, appVersion: string): void {
  * Never include learner content: no symbol labels, no message text.
  */
 export function logError(area: string, code: string, error: unknown): void {
+  // Development builds only: also show the error in the console (never in release builds).
+  if (__DEV__ && process.env.NODE_ENV !== 'test') {
+    console.warn(`[katha] ${area}/${code}:`, error instanceof Error ? error.message : String(error));
+  }
   if (!_db) return;
 
   const raw = error instanceof Error ? error.message : String(error);

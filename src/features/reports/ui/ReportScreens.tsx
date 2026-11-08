@@ -8,7 +8,7 @@ import { getSetting, setSetting } from '@/core/db/settings';
 import { t } from '@/core/i18n/t';
 import { logError } from '@/core/log';
 import { facText, space, useTheme } from '@/core/theme';
-import { formatShortDate, formatTime } from '@/core/time';
+import { formatPeriod, formatShortDate, formatTime } from '@/core/time';
 import type { Role } from '@/core/types/common';
 import { BarChart, Button, Card, LoadGate, ListRow, Screen, SegmentedControl, Toast } from '@/core/ui';
 import { RequireRole, canView, getLearner, loadPermissions, ROLES, useCanView } from '@/features/access/index';
@@ -22,14 +22,35 @@ import { MessageHistoryRow } from '../shared/ui/MessageHistoryRow';
 import { MetricCard } from '../shared/ui/MetricCard';
 import { PeriodPicker, PeriodSheet } from '../shared/ui/PeriodPicker';
 import { ReportView } from './ReportView';
+import { formatCustomRange } from '../domain/customPeriod';
 import { periodFor, usePeriod, useReport, type PickerPreset } from './useReport';
 
 const PRESET_LABEL: Record<PickerPreset, string> = {
   today: 'dashboard.today',
   '7d': 'dashboard.last_7d',
   '30d': 'dashboard.last_30d',
-  custom: 'dashboard.custom',
+  custom: 'period.custom',
 };
+
+/** Period picker button plus its sheet (Today, 7 days, 30 days, Custom with two date fields). */
+function PeriodControl({ state }: { state: ReturnType<typeof usePeriod> }) {
+  const [sheet, setSheet] = useState(false);
+  const label = state.preset === 'custom' ? formatCustomRange(state.custom) : t(PRESET_LABEL[state.preset]);
+  return (
+    <>
+      <PeriodPicker label={label} accessibilityLabel={`${t('dashboard.period')}: ${label}`} onPress={() => setSheet(true)} />
+      {sheet ? (
+        <PeriodSheet
+          selectedPreset={state.preset}
+          customRange={state.custom}
+          onApplyCustom={state.applyCustom}
+          onSelect={state.setPreset}
+          onClose={() => setSheet(false)}
+        />
+      ) : null}
+    </>
+  );
+}
 
 /** R-01 to R-04: one role's report. */
 export function ReportScreen({
@@ -48,8 +69,8 @@ export function ReportScreen({
   onHistory?: () => void;
 }) {
   const db = useDb();
-  const { preset, setPreset, period } = usePeriod(initialPreset);
-  const [sheet, setSheet] = useState(false);
+  const periodState = usePeriod(initialPreset);
+  const { period } = periodState;
   const report = useReport(role, period);
   const canExport = useCanView('export');
   const canHistory = useCanView('history');
@@ -58,8 +79,7 @@ export function ReportScreen({
   return (
     <Screen title={t(`report.${role}.title`)} onBack={onBack} testID={`screen-report-${role}`}>
       <RequireRole resource={`report:${role}` as const}>
-        <PeriodPicker label={t(PRESET_LABEL[preset])} onPress={() => setSheet(true)} />
-        {sheet ? <PeriodSheet selectedPreset={preset} onSelect={(p) => { setPreset(p); setSheet(false); }} onClose={() => setSheet(false)} /> : null}
+        <PeriodControl state={periodState} />
         <LoadGate status={report.status} onRetry={report.reload}>
           {report.status === 'ready' ? (
             <ReportView
@@ -90,8 +110,8 @@ export function DashboardScreen({
   const { role } = useAppContext();
   const { width } = useWindowDimensions();
   const { colors } = useTheme();
-  const { preset, setPreset, period } = usePeriod('7d');
-  const [sheet, setSheet] = useState(false);
+  const periodState = usePeriod('7d');
+  const { period } = periodState;
   const tablet = width >= 840;
 
   const load = useLoad(
@@ -111,13 +131,12 @@ export function DashboardScreen({
 
   return (
     <Screen title={t('dashboard.title')} wide testID="screen-dashboard">
-      <PeriodPicker label={t(PRESET_LABEL[preset])} onPress={() => setSheet(true)} />
-      {sheet ? <PeriodSheet selectedPreset={preset} onSelect={(p) => { setPreset(p); setSheet(false); }} onClose={() => setSheet(false)} /> : null}
+      <PeriodControl state={periodState} />
       <LoadGate status={load.status} onRetry={load.reload}>
         {load.status === 'ready' ? (
           <View style={{ flexDirection: tablet ? 'row' : 'column', gap: space.s16 }}>
             <View style={{ flex: 1, gap: space.s16 }}>
-              <Card title={load.data.learner.display_name} body={`${load.data.learner.participant_code} · ${period.start} – ${period.end}`} />
+              <Card title={load.data.learner.display_name} body={`${load.data.learner.participant_code} · ${formatPeriod(period)}`} />
               <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: space.s12 }}>
                 {Object.values(load.data.results).map((r) => (
                   <View key={r!.id} style={{ width: '47%', flexGrow: 1 }}>
@@ -249,8 +268,8 @@ export function BuilderScreen({ onBack, onOpen }: { onBack?: () => void; onOpen:
 export function HistoryScreen({ onBack }: { onBack?: () => void }) {
   const db = useDb();
   const [filter, setFilter] = useState<MessageFilter>('all');
-  const { preset, setPreset, period } = usePeriod('7d');
-  const [sheet, setSheet] = useState(false);
+  const periodState = usePeriod('7d');
+  const { period } = periodState;
   const [tagging, setTagging] = useState<{ id: string; text: string } | null>(null);
   const canTag = useCanView('observations:enter');
 
@@ -281,8 +300,7 @@ export function HistoryScreen({ onBack }: { onBack?: () => void }) {
   return (
     <Screen title={t('history.title')} onBack={onBack} testID="screen-history">
       <RequireRole resource="history">
-        <PeriodPicker label={t(PRESET_LABEL[preset])} onPress={() => setSheet(true)} />
-        {sheet ? <PeriodSheet selectedPreset={preset} onSelect={(p) => { setPreset(p); setSheet(false); }} onClose={() => setSheet(false)} /> : null}
+        <PeriodControl state={periodState} />
         <SegmentedControl
           accessibilityLabel={t('history.title')}
           options={[

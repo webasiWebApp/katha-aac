@@ -11,4 +11,5 @@ export {
   formatShortDate,
   formatTime,
   addDays,
+  formatPeriod,
 } from './time';
