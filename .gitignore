@@ -52,8 +52,8 @@ build/
 # tooling
 coverage/
 .idea/
-.vscode/
 
 
 # graphify output (regenerable)
 graphify-out/
+config.bat

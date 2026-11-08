@@ -39,6 +39,9 @@ export function CoreKey({
   height = 88,
 }: CoreKeyProps) {
   const { colors } = useTheme();
+  const compact = height < 80;
+  // Box must be at least as tall as the line, or shrink-to-fit collapses the font.
+  const labelBox = height >= 60 ? 34 : 26;
 
   const render = (down: boolean) => {
     const state: CellFrameState = forcedPressed || down ? 'pressed' : 'default';
@@ -56,8 +59,8 @@ export function CoreKey({
       overflow: 'hidden',
       paddingLeft: Math.max(0, PAD.l - bw),
       paddingRight: Math.max(0, PAD.r - bw),
-      paddingTop: Math.max(0, PAD.t - bw),
-      paddingBottom: Math.max(0, PAD.b - bw),
+      paddingTop: Math.max(0, (compact ? 4 : PAD.t) - bw),
+      paddingBottom: Math.max(0, (compact ? 2 : PAD.b) - bw),
       ...frame,
     };
     return (
@@ -68,8 +71,19 @@ export function CoreKey({
         >
           <ClassTint wordClass={kind === 'core' ? 'core' : 'folder'} testID="class-tint" />
         </View>
-        <Pictogram symbol={pictogram} size={height < 80 ? 32 : 44} />
-        <Text style={[childText.labelS, { color: colors.child.ink }]}>{label}</Text>
+        <Pictogram symbol={pictogram} size={compact ? (height >= 60 ? 24 : 20) : 44} />
+        <Text
+          numberOfLines={1}
+          adjustsFontSizeToFit
+          minimumFontScale={0.5}
+          style={[
+            childText.labelS,
+            { color: colors.child.ink },
+            compact ? { height: labelBox, lineHeight: labelBox - 4, maxWidth: '100%', textAlign: 'center' } : null,
+          ]}
+        >
+          {label}
+        </Text>
       </View>
     );
   };

@@ -10,13 +10,15 @@ export interface MessageChipProps {
   pictogram: PictogramName;
   /** Written Sinhala word shown with the symbol (R7). verify with SLT */
   label: string;
+  /** Phone: chip height in dp (default 84, 88 when speaking). */
+  height?: number;
 }
 
 /**
  * Symbol plus written word inside the message bar (Figma 5:105). Speaking = the word being
  * spoken right now (soft blue fill, 2 px blue border). Display only.
  */
-export function MessageChip({ state = 'default', pictogram, label }: MessageChipProps) {
+export function MessageChip({ state = 'default', pictogram, label, height }: MessageChipProps) {
   const { colors } = useTheme();
   const speaking = state === 'speaking';
   return (
@@ -25,8 +27,8 @@ export function MessageChip({ state = 'default', pictogram, label }: MessageChip
       accessibilityLabel={label}
       accessibilityState={{ selected: speaking }}
       style={{
-        width: speaking ? 72 : 68,
-        height: speaking ? 88 : 84,
+        width: height ? Math.round(height * 0.95) : speaking ? 72 : 68,
+        height: height ?? (speaking ? 88 : 84),
         borderRadius: 12,
         alignItems: 'center',
         justifyContent: 'center',
@@ -43,8 +45,15 @@ export function MessageChip({ state = 'default', pictogram, label }: MessageChip
           : {}),
       }}
     >
-      <Pictogram symbol={pictogram} size={48} />
-      <Text style={[childText.chip, { color: colors.child.ink }]}>{label}</Text>
+      <Pictogram symbol={pictogram} size={height ? Math.round(height * 0.4) : 48} />
+      <Text
+        numberOfLines={height ? 1 : undefined}
+        adjustsFontSizeToFit={height !== undefined}
+        minimumFontScale={0.5}
+        style={[childText.chip, { color: colors.child.ink }, height ? { height: Math.round(height * 0.45), lineHeight: Math.round(height * 0.45) - 2, maxWidth: '100%' } : null]}
+      >
+        {label}
+      </Text>
     </View>
   );
 }

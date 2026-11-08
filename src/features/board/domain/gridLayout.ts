@@ -44,8 +44,8 @@ const METRICS: Record<BoardLayoutMode, BoardMetrics> = {
   regular: { margin: MARGIN, zoneGap: ZONE_GAP, cellGap: null, bar: 96, button: null, coreKey: null, coreRows: 1, messageBlock: MESSAGE_ROW, coreBlock: CORE_ROW },
   // bar 72 + 8 + buttons 64; core keys 2 rows x 64 + 8
   phonePortrait: { margin: 12, zoneGap: 8, cellGap: 8, bar: 72, button: 64, coreKey: 64, coreRows: 2, messageBlock: 144, coreBlock: 136 },
-  // bar and buttons share one 56 row; one row of 48 core keys
-  phoneLandscape: { margin: 8, zoneGap: 8, cellGap: 8, bar: 56, button: 56, coreKey: 48, coreRows: 1, messageBlock: 56, coreBlock: 48 },
+  // bar and buttons share one 56 row; one row of 52 core keys
+  phoneLandscape: { margin: 6, zoneGap: 8, cellGap: 8, bar: 56, button: 56, coreKey: 52, coreRows: 1, messageBlock: 56, coreBlock: 52 },
 };
 
 export function layoutMode(width: number, height: number): BoardLayoutMode {
