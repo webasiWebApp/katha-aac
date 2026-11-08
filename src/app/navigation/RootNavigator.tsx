@@ -19,7 +19,8 @@ export function RootNavigator() {
       <Stack.Screen name="Onboarding" component={OnboardingScreen} />
       <Stack.Screen name="AdultSignIn" component={AdultSignInScreen} />
       <Stack.Screen name="Adult" component={AdultScreen} />
-      <Stack.Screen name="ChildMode" component={ChildBoardScreen} />
+      {/* Child mode: no swipe back; Android back is blocked inside the board (D-17). */}
+      <Stack.Screen name="ChildMode" component={ChildBoardScreen} options={{ gestureEnabled: false }} />
     </Stack.Navigator>
   );
 }

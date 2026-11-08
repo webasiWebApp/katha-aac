@@ -1,0 +1,41 @@
+# T-170 Full flow: end session, review, builder, history, share sheet, settings, delete all.
+# NOT RUN: needs an emulator with a tablet profile, a development build and Maestro.
+appId: com.katha.aac
+---
+- launchApp
+- tapOn: "Parent"
+- tapOn: "4"
+- tapOn: "3"
+- tapOn: "2"
+- tapOn: "1"
+- tapOn: "Start child mode"
+- tapOn: "Start"
+- tapOn: "මට"
+- tapOn: "Speak message"
+# adult gate: hold two fingers in the top-left corner for 3 s (use adb or a manual step)
+# - runScript: e2e/scripts/two-finger-hold.js   (TODO(human): provide the gesture script)
+- assertVisible: "Review session"
+- tapOn: "Save review"
+- tapOn: "Reports"
+- tapOn: "Build a report"
+- assertVisible: "Preview report"
+- back
+- tapOn: "Parent report"
+- tapOn: "View message history"
+- assertVisible: "Message history"
+- back
+- tapOn: "Share or export"
+- tapOn: "Share with another app"
+- assertVisible: "Share this report?"
+- tapOn: "Cancel"
+- tapOn: "Settings"
+- tapOn: "Child view"
+- tapOn: "5x6"
+- back
+- tapOn: "Privacy and consent"
+- tapOn: "Delete all records"
+- tapOn: "4"
+- tapOn: "3"
+- tapOn: "2"
+- tapOn: "1"
+- assertVisible: "All records deleted"

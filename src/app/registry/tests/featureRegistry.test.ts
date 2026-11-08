@@ -1,11 +1,10 @@
 import { openDatabase, resetDatabase } from '../../../core/db/__mocks__/sqliteMemory';
-import { resetBus, emit } from '../../../core/events/bus';
+import { resetBus, emit, on } from '../../../core/events/bus';
 import type { Db, FeatureManifest } from '@/core/types/manifest';
 
 // Import bootFeatures as a function we can call with a fake manifest list.
 // We test it in isolation — not with the real featureRegistry array.
 import { runMigrations } from '../../../core/db/migrate';
-import { on } from '../../../core/events/bus';
 
 async function bootFake(db: Db, manifests: FeatureManifest[]): Promise<void> {
   await runMigrations(db, manifests);

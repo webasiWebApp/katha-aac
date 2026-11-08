@@ -8,8 +8,8 @@ export type RootStackParams = {
   Boot: undefined;
   Onboarding: undefined;
   AdultSignIn: undefined;
-  Adult: undefined;
-  ChildMode: undefined;
+  Adult: { reviewSessionId?: string } | undefined;
+  ChildMode: { sessionId: string };
 };
 
 export type RootScreenProps<T extends keyof RootStackParams> = NativeStackScreenProps<

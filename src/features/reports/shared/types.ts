@@ -3,6 +3,10 @@
  * These minimal interfaces let the P2 UI components compile and be tested.
  */
 
+// ── Report definitions (section 8.1) ──────────────────────────────────────────
+
+import type { Role } from '@/core/types/common';
+
 export type MeasureId = string;
 
 export interface MeasureResult {
@@ -28,6 +32,38 @@ export interface MessageHistoryEntry {
   at: string;
   offsetMin: number;
   /** Whether the message was independent or required prompting. */
-  source: 'independent' | 'prompted';
+  source: 'independent' | 'prompted' | 'not_recorded';
   answer: IntentAnswer;
+}
+
+export type SectionKind =
+  | 'glance'
+  | 'wordChips'
+  | 'barRows'
+  | 'barChart'
+  | 'lineChart'
+  | 'combinations'
+  | 'metricPair'
+  | 'latencyCard'
+  | 'planningIdea'
+  | 'goals'
+  | 'notes';
+
+export interface ReportSection {
+  id: string;
+  kind: SectionKind;
+  titleKey: string;
+  subtitleKey?: string;
+  measures: MeasureId[];
+  required?: boolean;
+}
+
+export interface ReportDefinition {
+  role: Role;
+  titleKey: string;
+  subtitleKey: string;
+  glance: [MeasureId, MeasureId, MeasureId, MeasureId];
+  /** Optional i18n label overrides for glance cards. */
+  glanceLabelKeys?: Partial<Record<MeasureId, string>>;
+  sections: ReportSection[];
 }

@@ -1,3 +1,4 @@
 import type { FeatureManifest } from '@/core/types/manifest';
+import { migrations } from './data/migrations';
 
-export const manifest: FeatureManifest = { id: 'access' };
+export const manifest: FeatureManifest = { id: 'access', migrations };

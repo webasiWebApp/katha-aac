@@ -197,7 +197,7 @@ describe('MessageBar', () => {
 describe('ChildButton', () => {
   const kinds: ChildButtonKind[] = ['speak', 'undo', 'clear'];
   const states: ChildButtonState[] = ['default', 'pressed', 'disabled'];
-  const label = (k: ChildButtonKind) => ({ speak: 'Speak', undo: 'Undo', clear: 'Clear' })[k];
+  const label = (k: ChildButtonKind) => ({ speak: 'Speak', replay: 'Replay', undo: 'Undo', clear: 'Clear' })[k];
 
   it.each(kinds.flatMap((k) => states.map((s) => [k, s] as const)))(
     '%s / %s has role, label, state and size',
@@ -271,7 +271,7 @@ describe('ChildButton', () => {
     await user.press(clear);
     expect(onLongPress).not.toHaveBeenCalled();
     expect(onPress).not.toHaveBeenCalled();
-    await user.longPress(clear);
+    await user.longPress(clear, { duration: 800 }); // spec 9.3: Clear needs an 800 ms hold
     expect(onLongPress).toHaveBeenCalledTimes(1);
     expect(onPress).not.toHaveBeenCalled();
   });

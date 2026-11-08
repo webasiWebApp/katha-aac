@@ -1,0 +1,41 @@
+{
+  "id": "v1",
+  "label": "Starter vocabulary v1 (draft, verify with SLP)",
+  "language": "si",
+  "symbols": [
+    { "id": "sym_me", "label": "මට", "gloss": "I, me", "category": "people", "isCore": false, "pictogram": "me", "kind": "word" },
+    { "id": "sym_want", "label": "ඕනේ", "gloss": "want", "category": "action", "isCore": true, "pictogram": "want", "kind": "word" },
+    { "id": "sym_eat", "label": "කන්න", "gloss": "eat", "category": "action", "isCore": false, "pictogram": "eat", "kind": "word" },
+    { "id": "sym_drink", "label": "බොන්න", "gloss": "drink", "category": "action", "isCore": false, "pictogram": "drink", "kind": "word" },
+    { "id": "sym_go", "label": "යන්න", "gloss": "go", "category": "action", "isCore": false, "pictogram": "go", "kind": "word" },
+    { "id": "sym_play", "label": "සෙල්ලම්", "gloss": "play", "category": "action", "isCore": false, "pictogram": "play", "kind": "word" },
+    { "id": "sym_water", "label": "වතුර", "gloss": "water", "category": "thing", "isCore": false, "pictogram": "water", "kind": "word" },
+    { "id": "sym_milk", "label": "කිරි", "gloss": "milk", "category": "thing", "isCore": false, "pictogram": "milk", "kind": "word" },
+    { "id": "sym_rice", "label": "බත්", "gloss": "rice", "category": "thing", "isCore": false, "pictogram": "rice", "kind": "word" },
+    { "id": "sym_school", "label": "ඉස්කෝලේ", "gloss": "school", "category": "thing", "isCore": false, "pictogram": "school", "kind": "word" },
+    { "id": "sym_finished", "label": "ඉවරයි", "gloss": "finished", "category": "describing", "isCore": false, "pictogram": "finished", "kind": "word" },
+    { "id": "sym_help", "label": "උදව්", "gloss": "help", "category": "core", "isCore": true, "pictogram": "help", "kind": "word" },
+    { "id": "sym_more", "label": "තව", "gloss": "more", "category": "core", "isCore": true, "pictogram": "more", "kind": "word" },
+    { "id": "sym_stop", "label": "නවත්තන්න", "gloss": "stop", "category": "core", "isCore": true, "pictogram": "stop", "kind": "word" },
+    { "id": "sym_yes", "label": "ඔව්", "gloss": "yes", "category": "core", "isCore": true, "pictogram": "yes", "kind": "word" },
+    { "id": "sym_no", "label": "නෑ", "gloss": "no", "category": "core", "isCore": true, "pictogram": "no", "kind": "word" },
+    { "id": "nav_home", "label": "ගෙදර", "gloss": "home page", "category": "folder", "isCore": false, "pictogram": "home", "kind": "nav" },
+    { "id": "nav_quick", "label": "ඉක්මන්", "gloss": "quick needs", "category": "folder", "isCore": false, "pictogram": "quick", "kind": "nav" },
+    { "id": "nav_break", "label": "විවේකය", "gloss": "break", "category": "folder", "isCore": false, "pictogram": "break", "kind": "nav" }
+  ],
+  "storedPhrases": [
+    { "id": "phr_help", "label": "මට උදව් ඕනේ", "gloss": "I need help", "pictogram": "help" },
+    { "id": "phr_stop", "label": "නවත්තන්න", "gloss": "stop", "pictogram": "stop" },
+    { "id": "phr_break", "label": "මට විවේකයක් ඕනේ", "gloss": "I want a break", "pictogram": "break" },
+    { "id": "phr_finished", "label": "ඉවරයි", "gloss": "finished", "pictogram": "finished" }
+  ],
+  "pages": [
+    { "id": "home", "title": "Home", "cells": ["sym_me", "sym_want", "sym_eat", "sym_drink", "sym_go", "sym_play", "sym_water", "sym_milk", "sym_rice", "sym_school", "sym_finished", null] },
+    { "id": "quick", "title": "Quick needs", "cells": ["phr_help", "phr_stop", "phr_break", "phr_finished", null, null, null, null, null, null, null, null] }
+  ],
+  "folders": [],
+  "coreKeys": { "home": "nav_home", "quick": "nav_quick", "help": "sym_help", "more": "sym_more", "stop": "sym_stop", "yes": "sym_yes", "no": "sym_no", "break": "nav_break" },
+  "templates": [
+    { "id": "tpl_want", "trigger": "sym_want", "pattern": ["sym_me", "{slot}", "sym_want"], "slotCategories": ["thing", "action"], "display": "මට ___ ඕනේ" }
+  ]
+}

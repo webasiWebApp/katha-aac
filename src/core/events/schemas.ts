@@ -20,7 +20,7 @@ export type EventSessionStarted = {
 
 export type EventSessionEnded = {
   type: 'session_ended';
-  endReason: 'manual' | 'timeout';
+  endReason: 'adult_exit' | 'background_timeout' | 'app_restart';
   activeMs: number;
 };
 
@@ -134,7 +134,7 @@ export type EventGateAttempt = {
 export type EventIntentAnswered = {
   type: 'intent_answered';
   messageId: string;
-  answer: boolean;
+  answer: 'meant' | 'not_meant' | 'unsure';
 };
 
 /**

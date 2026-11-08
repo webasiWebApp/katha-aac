@@ -10,4 +10,5 @@ export {
   timeOfDayBucket,
   formatShortDate,
   formatTime,
+  addDays,
 } from './time';

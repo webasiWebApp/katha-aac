@@ -1,7 +1,6 @@
 import { colorTokens, type ColorTokenName } from '../tokens';
 import { childText } from '../typography';
 
-const MODES = ['light', 'dark', 'highContrast'] as const;
 const TOKEN_NAMES = Object.keys(colorTokens) as ColorTokenName[];
 
 const HEX_RE = /^#[0-9A-Fa-f]{6}([0-9A-Fa-f]{2})?$/;

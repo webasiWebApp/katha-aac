@@ -24,6 +24,9 @@ export interface SymbolCellProps {
   onPress?: () => void;
   /** Defaults to `label`. */
   accessibilityLabel?: string;
+  /** Overrides the size preset so cells fill the grid area (section 5.5). */
+  width?: number;
+  height?: number;
 }
 
 // Per-size layout read from Figma 4:167. Padding is measured from the outer edge (strokes sit
@@ -51,10 +54,13 @@ export function SymbolCell({
   newBadgeLabel,
   onPress,
   accessibilityLabel,
+  width,
+  height,
 }: SymbolCellProps) {
   const { colors } = useTheme();
   const layout = LAYOUT[size];
-  const dims = childGeometry.cell[size];
+  const preset = childGeometry.cell[size];
+  const dims = { width: width ?? preset.width, height: height ?? preset.height };
   const interactive = onPress !== undefined && state !== 'hidden' && state !== 'disabled';
 
   const render = (pressed: boolean) => {

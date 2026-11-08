@@ -17,13 +17,23 @@
       "package": "com.katha.aac",
       "versionCode": 1,
       "allowBackup": false,
-      "permissions": []
+      "permissions": [],
+      "blockedPermissions": [
+        "android.permission.INTERNET",
+        "android.permission.RECORD_AUDIO",
+        "android.permission.SYSTEM_ALERT_WINDOW"
+      ]
     },
     "web": {
       "favicon": "./assets/favicon.png"
     },
     "plugins": [
-      "expo-sqlite",
+      [
+        "expo-sqlite",
+        {
+          "useSQLCipher": true
+        }
+      ],
       "expo-dev-client",
       [
         "expo-font",
@@ -40,7 +50,12 @@
         }
       ],
       "expo-secure-store",
-      "expo-audio",
+      [
+        "expo-audio",
+        {
+          "microphonePermission": false
+        }
+      ],
       "expo-sharing",
       "expo-localization",
       "expo-asset"

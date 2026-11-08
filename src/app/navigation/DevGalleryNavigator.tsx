@@ -9,7 +9,6 @@ import { ChildGridScreen } from '@/app/dev/screens/ChildGridScreen';
 import { ChildMessageScreen } from '@/app/dev/screens/ChildMessageScreen';
 import { FacilitatorScreen } from '@/app/dev/screens/FacilitatorScreen';
 import { TokensScreen } from '@/app/dev/screens/TokensScreen';
-import { ChildBoardScreen } from '@/app/screens/ChildBoardScreen';
 import { facText, fontFamily, ThemeProvider, useTheme, type ColorMode } from '@/core/theme';
 import { ListRow, SegmentedControl } from '@/core/ui';
 

@@ -116,6 +116,11 @@ export function formatTime(at: string, offsetMin: number): string {
   return `${h}:${m}`;
 }
 
+/** Adds n calendar days to a YYYY-MM-DD date. */
+export function addDays(date: string, n: number): string {
+  return msToDate(dateToMs(date) + n * 86_400_000);
+}
+
 // ── Private helpers ───────────────────────────────────────────────────────────
 
 function dateToMs(date: string): number {

@@ -59,10 +59,10 @@ test('handlers for different event types do not interfere', async () => {
 });
 
 test('intent_answered bus-only event works', async () => {
-  let received = false;
+  let received = '';
   on('intent_answered', async (e) => { received = e.answer; });
 
-  await emit({ type: 'intent_answered', messageId: 'm1', answer: true });
+  await emit({ type: 'intent_answered', messageId: 'm1', answer: 'meant' });
 
-  expect(received).toBe(true);
+  expect(received).toBe('meant');
 });

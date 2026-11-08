@@ -1,4 +1,3 @@
-import { useRef } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import { SvgXml } from 'react-native-svg';
 

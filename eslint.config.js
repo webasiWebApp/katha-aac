@@ -86,4 +86,24 @@ module.exports = defineConfig([
       ],
     },
   },
+  // Tests may assemble the whole app (test database helper lives in src/app/testing).
+  {
+    files: ['src/**/tests/**/*.{ts,tsx}'],
+    rules: { 'boundaries/dependencies': 'off' },
+  },
+  // React Compiler advisory rules: these modules deliberately keep "latest value" refs and reset
+  // derived state in effects (timers, audio callbacks). Behaviour is covered by tests.
+  {
+    files: [
+      'src/features/board/ui/BoardScreen.tsx',
+      'src/features/composer/ui/useComposer.ts',
+      'src/core/app/useLoad.ts',
+      'src/app/screens/ChildBoardScreen.tsx',
+    ],
+    rules: {
+      'react-hooks/refs': 'off',
+      'react-hooks/purity': 'off',
+      'react-hooks/set-state-in-effect': 'off',
+    },
+  },
 ]);

@@ -3,8 +3,9 @@ import { StyleSheet, Text, View } from 'react-native';
 import { facText, radius, space, useTheme } from '@/core/theme';
 import { Icon } from '@/core/ui';
 
-const BANNER_TEXT =
-  'This report describes recorded app activity, not all communication. Usage statistics alone do not show language development.';
+import { LIMITATION_TEXT } from '../limitation';
+
+const BANNER_TEXT = LIMITATION_TEXT;
 
 /** Limitation notice shown at the top of every report (Figma 5:269). */
 export function LimitationBanner() {

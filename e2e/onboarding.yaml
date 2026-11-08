@@ -1,0 +1,25 @@
+# T-095 Onboarding. NOT RUN: needs an emulator or tablet with a development build and Maestro.
+# Run: maestro test e2e/onboarding.yaml   (start from a freshly installed app)
+appId: com.katha.aac
+---
+- launchApp:
+    clearState: true
+- assertVisible: "Katha AAC"
+- tapOn: "Get started"
+# Guardian PIN, entered twice
+- tapOn: "4"
+- tapOn: "3"
+- tapOn: "2"
+- tapOn: "1"
+- tapOn: "4"
+- tapOn: "3"
+- tapOn: "2"
+- tapOn: "1"
+- assertVisible: "Fictional profile for demonstration"
+- tapOn: "Continue"
+- assertVisible: "Data stays on this device"
+- tapOn: "Guardian consent to record app activity on this tablet"
+- tapOn: "Continue"
+- assertVisible: "Device check"
+- tapOn: "Finish setup"
+- assertVisible: "Sign in"

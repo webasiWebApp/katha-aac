@@ -1,0 +1,37 @@
+# T-081 Child board. NOT RUN: needs an emulator or tablet with a development build and Maestro.
+# Precondition: onboarding done (guardian PIN 4321, learner Demo Learner / P-07).
+appId: com.katha.aac
+---
+- launchApp
+- tapOn: "Parent"
+- tapOn: "4"
+- tapOn: "3"
+- tapOn: "2"
+- tapOn: "1"
+- tapOn: "Start child mode"
+- tapOn: "School"
+- tapOn: "Start"
+# me, water, want help core key, Speak, Replay
+- tapOn: "මට"
+- tapOn: "වතුර"
+- tapOn: "උදව්"
+- tapOn: "Speak message"
+- tapOn: "Replay message"
+# a new tap starts a new draft; Undo removes it
+- tapOn: "කිරි"
+- tapOn: "Undo last symbol"
+# long-press Clear (800 ms)
+- tapOn: "මට"
+- longPressOn: "Clear message"
+# quick page: stored phrase is spoken at once
+- tapOn: "ඉක්මන්"
+- tapOn: "මට උදව් ඕනේ"
+# break and back
+- tapOn: "විවේකය"
+- extendedWaitUntil:
+    visible:
+      id: "break-home-key"
+    timeout: 5000
+- tapOn:
+    id: "break-home-key"
+- assertVisible: "මට"

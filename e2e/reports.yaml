@@ -1,0 +1,31 @@
+# T-139 Reports. NOT RUN: needs an emulator or tablet with a development build and Maestro.
+# Precondition: onboarding done; run "Reset demonstration data" in Settings first (parent, PIN 4321).
+appId: com.katha.aac
+---
+- launchApp
+- tapOn: "Parent"
+- tapOn: "4"
+- tapOn: "3"
+- tapOn: "2"
+- tapOn: "1"
+- tapOn: "Settings"
+- tapOn: "Reset demonstration data"
+- tapOn: "4"
+- tapOn: "3"
+- tapOn: "2"
+- tapOn: "1"
+- assertVisible: "Demonstration data loaded"
+- tapOn: "Reports"
+- assertVisible: "Reports by role"
+- tapOn: "Parent report"
+- assertVisible: "Words used most"
+- assertVisible: "Sample data"
+- back
+- tapOn: "SLP report"
+- assertVisible: "Communication functions"
+- back
+- tapOn: "School report"
+- assertVisible: "Words used in class"
+- back
+- tapOn: "OT report"
+- assertVisible: "Interaction pattern"

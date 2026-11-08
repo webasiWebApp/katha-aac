@@ -24,7 +24,8 @@ const ANSWER_CHIP: Record<
 export function MessageHistoryRow({ entry, timeLabel }: MessageHistoryRowProps) {
   const { colors } = useTheme();
   const answerConfig = entry.answer ? ANSWER_CHIP[entry.answer] : null;
-  const source = entry.source === 'independent' ? 'independent' : 'prompted';
+  const source =
+    entry.source === 'independent' ? 'independent' : entry.source === 'prompted' ? 'prompted' : 'not tagged';
   const meta = `${timeLabel} · ${entry.symbolCount} symbols · ${source}`;
 
   return (

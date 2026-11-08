@@ -4,7 +4,7 @@ import { childText, useTheme } from '@/core/theme';
 import { cellFrameStyle, type CellFrameState } from '@/core/ui';
 import { Pictogram, type PictogramName } from '@/features/vocabulary';
 
-export type ChildButtonKind = 'speak' | 'undo' | 'clear';
+export type ChildButtonKind = 'speak' | 'replay' | 'undo' | 'clear';
 export type ChildButtonState = 'default' | 'pressed' | 'disabled' | 'longPress';
 
 export interface ChildButtonProps {
@@ -25,6 +25,8 @@ export interface ChildButtonProps {
 
 const PICTOGRAM: Record<ChildButtonKind, PictogramName> = {
   speak: 'speak',
+  // Placeholder until the designer delivers the Replay pictogram (H-05).
+  replay: 'back',
   undo: 'undo',
   clear: 'clear',
 };
@@ -102,6 +104,7 @@ export function ChildButton({
     <Pressable
       onPress={kind === 'clear' ? undefined : onPress}
       onLongPress={kind === 'clear' ? onLongPress : undefined}
+      delayLongPress={800}
       disabled={disabled}
       accessibilityRole="button"
       accessibilityLabel={accessibilityLabel}

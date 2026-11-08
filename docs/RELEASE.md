@@ -34,6 +34,40 @@ TODO(human): Generate keystore; store securely outside the repository. Do not co
 
 TODO(human): H-08 — Project lead sets up Play Console account.
 
+## Keystore handling (T-181)
+
+- EAS builds: let EAS manage the credentials (`npx eas-cli credentials`) or upload your own keystore; EAS stores it, nothing goes in git.
+- Local signed release (fallback): generate a keystore outside the repository, for example `keytool -genkeypair -v -keystore ~/katha-upload.jks -alias katha -keyalg RSA -keysize 2048 -validity 10000`. Put the path and passwords in `~/.gradle/gradle.properties` (`KATHA_UPLOAD_STORE_FILE`, `KATHA_UPLOAD_STORE_PASSWORD`, `KATHA_UPLOAD_KEY_ALIAS`, `KATHA_UPLOAD_KEY_PASSWORD`) and reference them from the release signing config. Never commit `.jks`, `.keystore`, `credentials.json` or `gradle.properties` containing passwords.
+- Keep two copies of the keystore with the project lead (H-08) and enable Play App Signing.
+
+## Version and identity (T-180)
+
+Version 1.0.0, versionCode 1 (`app.json`). The icon, adaptive icon and splash in `assets/` are placeholders; the designer replaces them (H-05). About (Settings) shows the app version, schema version (`v1`) and vocabulary version.
+
+## Before building
+
+1. `npx expo prebuild --clean` so `android/` is regenerated from `app.json` (this applies `blockedPermissions`).
+2. `npm run check`.
+3. Build: `npx eas-cli build --platform android --profile production` (AAB) or `--profile preview` (APK for the tablet).
+4. Inspect the merged manifest of the release build: it must contain no INTERNET permission and `allowBackup="false"` (for example `./gradlew :app:processReleaseMainManifest` then open `app/build/intermediates/merged_manifest/release/.../AndroidManifest.xml`).
+
+## Google Play data safety answers (draft, confirm with H-08 and H-06)
+
+- Does your app collect or share any of the required user data types? **No.** All data stays on the device; nothing is sent to the developer or to third parties.
+- Is all of the user data collected by your app encrypted in transit? Not applicable (no data in transit).
+- Do you provide a way for users to request that their data is deleted? Yes, in the app (Settings > Data and retention, Privacy and consent > Delete all records, guardian PIN).
+- Permissions declared: none beyond what Android adds for audio playback (see merged manifest).
+- Privacy policy URL: TODO(human) host `docs/PRIVACY.md` (with contact details) at a public URL.
+- Content rating, target audience (children): TODO(human) answer with the supervisor; the app is operated by adults.
+
+## Internal testing upload (steps for the human)
+
+1. In Play Console create the app "Katha AAC", package `com.katha.aac` (TODO(human): confirm the package name).
+2. Testing > Internal testing > Create release, upload the AAB from EAS.
+3. Add testers (email list), save, roll out, share the opt-in link.
+4. Complete the Data safety, App content and Store listing sections before moving past internal testing.
+5. Install on the tablet from the opt-in link, then run `docs/DEVICE_CHECKLIST.md`.
+
 ## Release checklist
 
 - [ ] Version number bumped in `app.json`
