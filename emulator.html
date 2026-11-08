@@ -1,0 +1,1314 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Katha AAC — Mobile Phone Emulator</title>
+  <script src="https://www.gstatic.com/antigravity/web/dev/tailwindcss.min.js"></script>
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=Noto+Sans+Sinhala:wght@400;500;600;700;800&display=swap');
+    
+    * {
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+    }
+    
+    body {
+      font-family: 'Plus Jakarta Sans', 'Noto Sans Sinhala', -apple-system, BlinkMacSystemFont, sans-serif;
+      margin: 0;
+      padding: 0;
+      background-color: var(--background, #0f172a);
+      color: var(--foreground, #f8fafc);
+      overflow-x: hidden;
+    }
+
+    .sinhala-text {
+      font-family: 'Noto Sans Sinhala', 'Plus Jakarta Sans', sans-serif;
+    }
+
+    /* Device frame styling */
+    .device-shadow {
+      box-shadow: 0 25px 60px -15px rgba(0, 0, 0, 0.6), 0 0 0 1px rgba(255, 255, 255, 0.1), inset 0 0 0 2px rgba(255, 255, 255, 0.15);
+    }
+    
+    .tablet-shadow {
+      box-shadow: 0 30px 70px -20px rgba(0, 0, 0, 0.7), 0 0 0 1px rgba(255, 255, 255, 0.1), inset 0 0 0 3px rgba(255, 255, 255, 0.12);
+    }
+
+    /* Waveform animation */
+    @keyframes wavePulse {
+      0%, 100% { height: 4px; }
+      50% { height: 22px; }
+    }
+
+    .wave-bar {
+      animation: wavePulse 0.8s ease-in-out infinite;
+    }
+
+    /* Custom scrollbars */
+    ::-webkit-scrollbar {
+      width: 4px;
+      height: 4px;
+    }
+    ::-webkit-scrollbar-track {
+      background: transparent;
+    }
+    ::-webkit-scrollbar-thumb {
+      background: rgba(100,116,139,0.3);
+      border-radius: 9999px;
+    }
+
+    .no-scrollbar::-webkit-scrollbar {
+      display: none;
+    }
+    .no-scrollbar {
+      -ms-overflow-style: none;
+      scrollbar-width: none;
+    }
+
+    /* Touch button active animations */
+    .cell-press:active {
+      transform: scale(0.95);
+      transition: transform 0.08s ease;
+    }
+  </style>
+</head>
+<body class="min-h-screen flex flex-col items-center justify-start p-2 sm:p-4">
+
+  <!-- TOP APP HEADER & CONTROLS -->
+  <header class="w-full max-w-5xl mb-3 bg-slate-900/90 backdrop-blur-md rounded-2xl p-3 sm:p-4 border border-slate-800 shadow-xl flex flex-wrap items-center justify-between gap-3">
+    <div class="flex items-center gap-3">
+      <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-blue-600 to-indigo-500 flex items-center justify-center text-white font-black text-xl shadow-md shadow-blue-500/20">
+        K
+      </div>
+      <div>
+        <div class="flex items-center gap-2">
+          <h1 class="text-base font-bold tracking-tight text-white">Katha AAC · Sinhala Speech Enabled</h1>
+          <span class="px-2 py-0.5 text-[10px] font-semibold rounded-full bg-emerald-500/20 text-emerald-400 border border-emerald-500/30">Sinhala Audio Active</span>
+        </div>
+        <p class="text-xs text-slate-400">Tap pictograms to build phrase → Click 'කියන්න (Speak)' to play in Sinhala</p>
+      </div>
+    </div>
+
+    <!-- CONTROLS -->
+    <div class="flex flex-wrap items-center gap-2">
+      <!-- Device Selector -->
+      <div class="flex items-center bg-slate-800 p-1 rounded-xl border border-slate-700">
+        <button id="btn-phone" onclick="setDeviceMode('phone')" class="px-3 py-1.5 rounded-lg text-xs font-semibold transition-all flex items-center gap-1.5 bg-slate-700 text-white shadow-sm">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 18h.01M8 21h8a2 2 0 002-2V5a2 2 0 00-2-2H8a2 2 0 00-2 2v14a2 2 0 002 2z"/></svg>
+          📱 Phone View
+        </button>
+        <button id="btn-tablet" onclick="setDeviceMode('tablet')" class="px-3 py-1.5 rounded-lg text-xs font-semibold transition-all flex items-center gap-1.5 text-slate-400 hover:text-white">
+          <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z"/></svg>
+          💻 10" Tablet
+        </button>
+      </div>
+
+      <!-- Zoom Scale Controls -->
+      <div class="flex items-center bg-slate-800 p-1 rounded-xl border border-slate-700">
+        <span class="text-[11px] text-slate-400 font-medium px-2">Zoom:</span>
+        <button id="zoom-100" onclick="setZoom(1.0)" class="px-2 py-1 rounded-lg text-xs font-semibold bg-slate-700 text-white transition-all">100%</button>
+        <button id="zoom-85" onclick="setZoom(0.85)" class="px-2 py-1 rounded-lg text-xs font-semibold text-slate-400 hover:text-white transition-all">85%</button>
+        <button id="zoom-70" onclick="setZoom(0.70)" class="px-2 py-1 rounded-lg text-xs font-semibold text-slate-400 hover:text-white transition-all">70%</button>
+      </div>
+
+      <!-- Color Theme Switcher -->
+      <div class="flex items-center bg-slate-800 p-1 rounded-xl border border-slate-700">
+        <button id="theme-light" onclick="setColorTheme('light')" class="px-2 py-1 rounded-lg text-xs font-medium text-slate-300 hover:text-white bg-slate-700">
+          Light
+        </button>
+        <button id="theme-dark" onclick="setColorTheme('dark')" class="px-2 py-1 rounded-lg text-xs font-medium text-slate-400 hover:text-white">
+          Dark
+        </button>
+      </div>
+
+      <!-- Audio Mute Switch -->
+      <button id="btn-audio" onclick="toggleAudio()" class="p-2 rounded-xl bg-slate-800 border border-slate-700 text-slate-300 hover:text-white transition-colors" title="Toggle audio sound effects">
+        <svg id="audio-icon-on" class="w-4 h-4 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.536 8.464a5 5 0 010 7.072m2.828-9.9a9 9 0 010 12.728M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z"/></svg>
+        <svg id="audio-icon-off" class="w-4 h-4 text-slate-500 hidden" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707C10.923 3.663 12 4.109 12 5v14c0 .891-1.077 1.337-1.707.707L5.586 15z"/><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2"/></svg>
+      </button>
+
+      <!-- Open in New Window Button -->
+      <button onclick="popOutWindow()" class="px-3 py-1.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold flex items-center gap-1.5 shadow-sm transition-all" title="Open emulator in standalone popup window">
+        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/></svg>
+        New Window
+      </button>
+    </div>
+  </header>
+
+  <!-- NOTIFICATION TOAST -->
+  <div id="toast" class="fixed top-16 right-6 z-50 bg-slate-900 text-white text-xs px-3.5 py-2 rounded-xl border border-slate-700 shadow-2xl transition-all duration-300 opacity-0 pointer-events-none transform translate-y-2 flex items-center gap-2">
+    <span id="toast-icon">ℹ️</span>
+    <span id="toast-text">Message</span>
+  </div>
+
+  <!-- EMULATOR MAIN WORKSPACE -->
+  <main class="w-full flex flex-col items-center justify-center my-auto transition-all">
+
+    <!-- HARDWARE PHONE CONTAINER (Phone Mode) -->
+    <div id="phone-wrapper" class="relative transition-all duration-300">
+      
+      <!-- Phone Bezel & Body -->
+      <div id="phone-chassis" class="w-[390px] h-[810px] rounded-[52px] p-3.5 bg-gradient-to-b from-slate-700 via-slate-800 to-slate-900 device-shadow relative border-4 border-slate-600/60 flex flex-col">
+        
+        <!-- Physical Volume Buttons (Left side) -->
+        <div class="absolute -left-[7px] top-28 w-[3px] h-10 bg-slate-600 rounded-l-md"></div>
+        <div class="absolute -left-[7px] top-42 w-[3px] h-10 bg-slate-600 rounded-l-md"></div>
+        <!-- Physical Power Button (Right side) -->
+        <div class="absolute -right-[7px] top-32 w-[3px] h-14 bg-slate-600 rounded-r-md"></div>
+
+        <!-- Phone Display Screen -->
+        <div id="phone-screen" class="w-full h-full rounded-[40px] overflow-hidden flex flex-col relative select-none transition-colors duration-200 bg-[#FAF7F2] text-[#1F2933]">
+          
+          <!-- Modern Dynamic Island / Notch + Status Bar -->
+          <div class="w-full pt-3 px-6 pb-1.5 flex items-center justify-between text-xs font-semibold z-20 shrink-0">
+            <!-- Time -->
+            <span id="phone-clock" class="text-[12px] font-bold tracking-tight">09:41</span>
+            
+            <!-- Dynamic Island -->
+            <div class="w-24 h-5 bg-black rounded-full flex items-center justify-end px-2 gap-1.5 shadow-sm">
+              <div class="w-2.5 h-2.5 rounded-full bg-slate-900 border border-slate-700"></div>
+              <div class="w-1.5 h-1.5 rounded-full bg-blue-500/60 animate-pulse"></div>
+            </div>
+
+            <!-- Signal / WiFi / Battery -->
+            <div class="flex items-center gap-1.5 text-[11px]">
+              <svg class="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20"><path d="M2 11a1 1 0 011-1h2a1 1 0 011 1v5a1 1 0 01-1 1H3a1 1 0 01-1-1v-5zM8 7a1 1 0 011-1h2a1 1 0 011 1v9a1 1 0 01-1 1H9a1 1 0 01-1-1V7zM14 4a1 1 0 011-1h2a1 1 0 011 1v12a1 1 0 01-1 1h-2a1 1 0 01-1-1V4z"/></svg>
+              <svg class="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20"><path fill-rule="evenodd" d="M17.778 8.222c-4.296-4.296-11.26-4.296-15.556 0A1 1 0 01.808 6.808c5.076-5.077 13.308-5.077 18.384 0a1 1 0 01-1.414 1.414zM14.95 11.05a7 7 0 00-9.9 0 1 1 0 01-1.414-1.414 9 9 0 0112.728 0 1 1 0 01-1.414 1.414zm-2.829 2.828a3 3 0 00-4.242 0 1 1 0 01-1.415-1.414 5 5 0 017.072 0 1 1 0 01-1.415 1.414zM10 16a1 1 0 100-2 1 1 0 000 2z" clip-rule="evenodd"/></svg>
+              <div class="w-5 h-2.5 border border-current rounded-sm p-0.5 flex items-center">
+                <div class="h-full w-3.5 bg-current rounded-2xs"></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Phone View Content Router (Scrollable) -->
+          <div id="phone-content" class="w-full flex-1 overflow-y-auto overflow-x-hidden flex flex-col relative">
+            <!-- Dynamically populated via JS -->
+          </div>
+
+          <!-- NATIVE MOBILE BOTTOM NAVIGATION BAR -->
+          <nav id="phone-bottom-nav" class="w-full h-16 border-t flex items-center justify-around px-2 py-1 shrink-0 z-30 transition-colors shadow-sm bg-white border-slate-200">
+            
+            <!-- Tab 1: Child Board -->
+            <button onclick="changeScreen('board')" id="pnav-board" class="flex-1 flex flex-col items-center justify-center py-1 transition-all group">
+              <div class="pill-badge w-12 h-7 rounded-full flex items-center justify-center transition-all bg-blue-50 text-blue-600 scale-105">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.828 14.828a4 4 0 01-5.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/>
+                </svg>
+              </div>
+              <span class="tab-label text-[10px] font-bold mt-0.5 text-blue-600 tracking-tight">Child Board</span>
+            </button>
+
+            <!-- Tab 2: Facilitator Area -->
+            <button onclick="changeScreen('facilitator')" id="pnav-facilitator" class="flex-1 flex flex-col items-center justify-center py-1 transition-all group">
+              <div class="pill-badge w-12 h-7 rounded-full flex items-center justify-center transition-all text-slate-500 hover:text-slate-900">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/>
+                </svg>
+              </div>
+              <span class="tab-label text-[10px] font-medium mt-0.5 text-slate-500 tracking-tight">Facilitator</span>
+            </button>
+
+            <!-- Tab 3: Insights & Charts -->
+            <button onclick="changeScreen('charts')" id="pnav-charts" class="flex-1 flex flex-col items-center justify-center py-1 transition-all group">
+              <div class="pill-badge w-12 h-7 rounded-full flex items-center justify-center transition-all text-slate-500 hover:text-slate-900">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"/>
+                </svg>
+              </div>
+              <span class="tab-label text-[10px] font-medium mt-0.5 text-slate-500 tracking-tight">Insights</span>
+            </button>
+
+            <!-- Tab 4: Pictograms & Tokens -->
+            <button onclick="changeScreen('tokens')" id="pnav-tokens" class="flex-1 flex flex-col items-center justify-center py-1 transition-all group">
+              <div class="pill-badge w-12 h-7 rounded-full flex items-center justify-center transition-all text-slate-500 hover:text-slate-900">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"/>
+                </svg>
+              </div>
+              <span class="tab-label text-[10px] font-medium mt-0.5 text-slate-500 tracking-tight">Library</span>
+            </button>
+
+          </nav>
+
+          <!-- Bottom Home Bar Indicator -->
+          <div class="w-full py-1.5 flex items-center justify-center shrink-0 z-20">
+            <div class="w-32 h-1 bg-slate-400/50 rounded-full"></div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- HARDWARE TABLET CONTAINER (Tablet Mode) -->
+    <div id="tablet-wrapper" class="hidden relative transition-all duration-300">
+      
+      <!-- Tablet Bezel & Body (Landscape 10") -->
+      <div id="tablet-chassis" class="w-[980px] h-[640px] rounded-[44px] p-4 bg-gradient-to-r from-slate-700 via-slate-800 to-slate-900 tablet-shadow relative border-4 border-slate-600/70 flex flex-col">
+        
+        <!-- Front Camera in landscape bezel (Top center) -->
+        <div class="absolute top-2 left-1/2 -translate-x-1/2 w-2.5 h-2.5 rounded-full bg-slate-900 border border-slate-600 flex items-center justify-center">
+          <div class="w-1 h-1 rounded-full bg-blue-900"></div>
+        </div>
+
+        <!-- Stereo Speaker Grilles -->
+        <div class="absolute -left-1.5 top-1/2 -translate-y-1/2 flex flex-col gap-1">
+          <div class="w-1 h-4 bg-slate-600 rounded"></div>
+          <div class="w-1 h-4 bg-slate-600 rounded"></div>
+        </div>
+        <div class="absolute -right-1.5 top-1/2 -translate-y-1/2 flex flex-col gap-1">
+          <div class="w-1 h-4 bg-slate-600 rounded"></div>
+          <div class="w-1 h-4 bg-slate-600 rounded"></div>
+        </div>
+
+        <!-- Tablet Display Screen -->
+        <div id="tablet-screen" class="w-full h-full rounded-[30px] overflow-hidden flex flex-col relative select-none transition-colors duration-200 bg-[#FAF7F2] text-[#1F2933]">
+          
+          <!-- Tablet Android System Bar -->
+          <div id="tablet-sys-bar" class="w-full py-1.5 px-6 flex items-center justify-between text-xs font-medium border-b border-black/5 z-20 shrink-0">
+            <span class="text-[12px] font-semibold opacity-75">10:00 AM · Katha AAC Tablet</span>
+            <div class="flex items-center gap-3">
+              <span class="text-[11px] opacity-75">Sinhala Speech Engine Ready</span>
+              <div class="flex items-center gap-1.5 opacity-80">
+                <svg class="w-3.5 h-3.5" fill="currentColor" viewBox="0 0 20 20"><path d="M2 11a1 1 0 011-1h2a1 1 0 011 1v5a1 1 0 01-1 1H3a1 1 0 01-1-1v-5zM8 7a1 1 0 011-1h2a1 1 0 011 1v9a1 1 0 01-1 1H9a1 1 0 01-1-1V7zM14 4a1 1 0 011-1h2a1 1 0 011 1v12a1 1 0 01-1 1h-2a1 1 0 01-1-1V4z"/></svg>
+                <div class="w-4 h-2.5 border border-current rounded-xs p-0.5"><div class="h-full w-2.5 bg-current"></div></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Tablet Content Router -->
+          <div id="tablet-content" class="w-full flex-1 overflow-hidden flex flex-col relative">
+            <!-- Dynamically populated via JS -->
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </main>
+
+  <!-- JAVASCRIPT STATE ENGINE & COMPONENT RENDERING -->
+  <script>
+    // --- 1. SVG PICTOGRAM DICTIONARY ---
+    const pictograms = {"achchi":"<svg width=\"100%\" height=\"100%\" viewBox=\"0 0 96 96\" fill=\"none\" xmlns=\"http://www.w3.org/2000/svg\"><rect width=\"96\" height=\"96\" fill=\"#F5F5F5\"/><g id=\"Pictograms &#194;&#183; placeholder ARASAAC-style (96 px). Every Sinhala label: verify with SLT\"><rect x=\"-400.5\" y=\"-104.5\" width=\"1481\" height=\"721\" rx=\"23.5\" fill=\"white\"/><rect x=\"-400.5\" y=\"-104.5\" width=\"1481\" height=\"721\" rx=\"23.5\" stroke=\"#E1E4E8\"/><g id=\"items\"><g id=\"pict/achchi\"><g id=\"Vector\"><path d=\"M24 88V74C24 60.6667 32 54 48 54C64 54 72 60.6667 72 74V88\" fill=\"#B6A6E0\"/><path d=\"M24 88V74C24 60.6667 32 54 48 54C64 54 72 60.6667 72 74V88\" stroke=\"#1F2933\" stroke-width=\"3.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/></g><path id=\"Vector_2\" d=\"M48 19C51.866 19 55 15.866 55 12C55 8.13401 51.866 5 48 5C44.134 5 41 8.13401 41 12C41 15.866 44.134 19 48 19Z\" fill=\"#D4D4D4\" stroke=\"#1F2933\" stroke-width=\"3.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><path id=\"Vector_3\" d=\"M48 46C56.2843 46 63 39.2843 63 31C63 22.7157 56.2843 16 48 16C39.7157 16 33 22.7157 33 31C33 39.2843 39.7157 46 48 46Z\" fill=\"#C98E62\" stroke=\"#1F2933\" stroke-width=\"3.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><path id=\"Vector_4\" d=\"M33 29C33 20.3333 38 16 48 16C58 16 63 20.3333 63 29C57.6667 24.3333 52.6667 22.3333 48 23C43.3333 22.3333 38.3333 24.3333 33 29Z\" fill=\"#D4D4D4\" stroke=\"#1F2933\" stroke-width=\"3.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><path id=\"Vector_5\" d=\"M43 35.2C44.215 35.2 45.2 34.215 45.2 33C45.2 31.785 44.215 30.8 43 30.8C41.785 30.8 40.8 31.785 40.8 33C40.8 34.215 41.785 35.2 43 35.2Z\" fill=\"#1F2933\"/><path id=\"Vector_6\" d=\"M53 35.2C54.215 35.2 55.2 34.215 55.2 33C55.2 31.785 54.215 30.8 53 30.8C51.785 30.8 50.8 31.785 50.8 33C50.8 34.215 51.785 35.2 53 35.2Z\" fill=\"#1F2933\"/><path id=\"Vector_7\" d=\"M43 40C46.3333 42 49.6667 42 53 40\" stroke=\"#1F2933\" stroke-width=\"2.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><path id=\"Vector_8\" d=\"M43 38C45.7614 38 48 35.7614 48 33C48 30.2386 45.7614 28 43 28C40.2386 28 38 30.2386 38 33C38 35.7614 40.2386 38 43 38Z\" stroke=\"#1F2933\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><path id=\"Vector_9\" d=\"M53 38C55.7614 38 58 35.7614 58 33C58 30.2386 55.7614 28 53 28C50.2386 28 48 30.2386 48 33C48 35.7614 50.2386 38 53 38Z\" stroke=\"#1F2933\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/></g></g></g></svg>","amma":"<svg width=\"100%\" height=\"100%\" viewBox=\"0 0 96 96\" fill=\"none\" xmlns=\"http://www.w3.org/2000/svg\"><rect width=\"96\" height=\"96\" fill=\"#F5F5F5\"/><g id=\"Pictograms &#194;&#183; placeholder ARASAAC-style (96 px). Every Sinhala label: verify with SLT\"><rect x=\"-160.5\" y=\"-104.5\" width=\"1481\" height=\"721\" rx=\"23.5\" fill=\"white\"/><rect x=\"-160.5\" y=\"-104.5\" width=\"1481\" height=\"721\" rx=\"23.5\" stroke=\"#E1E4E8\"/><g id=\"items\"><g id=\"pict/amma\"><g id=\"Vector\"><path d=\"M24 88V74C24 60.6667 32 54 48 54C64 54 72 60.6667 72 74V88\" fill=\"#F2994A\"/><path d=\"M24 88V74C24 60.6667 32 54 48 54C64 54 72 60.6667 72 74V88\" stroke=\"#1F2933\" stroke-width=\"3.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/></g><path id=\"Vector_2\" d=\"M31 50C29 26 34.6667 14 48 14C61.3333 14 67 26 65 50H31Z\" fill=\"#2B2B2B\" stroke=\"#1F2933\" stroke-width=\"3.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><path id=\"Vector_3\" d=\"M48 46C56.2843 46 63 39.2843 63 31C63 22.7157 56.2843 16 48 16C39.7157 16 33 22.7157 33 31C33 39.2843 39.7157 46 48 46Z\" fill=\"#C98E62\" stroke=\"#1F2933\" stroke-width=\"3.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><path id=\"Vector_4\" d=\"M34 27C36.6667 19.6667 41.3333 16 48 16C54.6667 16 59.3333 19.6667 62 27C55.3333 23 46 23 34 27Z\" fill=\"#2B2B2B\" stroke=\"#1F2933\" stroke-width=\"3.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><path id=\"Vector_5\" d=\"M43 35.2C44.215 35.2 45.2 34.215 45.2 33C45.2 31.785 44.215 30.8 43 30.8C41.785 30.8 40.8 31.785 40.8 33C40.8 34.215 41.785 35.2 43 35.2Z\" fill=\"#1F2933\"/><path id=\"Vector_6\" d=\"M53 35.2C54.215 35.2 55.2 34.215 55.2 33C55.2 31.785 54.215 30.8 53 30.8C51.785 30.8 50.8 31.785 50.8 33C50.8 34.215 51.785 35.2 53 35.2Z\" fill=\"#1F2933\"/><path id=\"Vector_7\" d=\"M43 40C46.3333 42 49.6667 42 53 40\" stroke=\"#1F2933\" stroke-width=\"2.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/></g></g></g></svg>","back":"<svg width=\"100%\" height=\"100%\" viewBox=\"0 0 96 96\" fill=\"none\" xmlns=\"http://www.w3.org/2000/svg\"><rect width=\"96\" height=\"96\" fill=\"#F5F5F5\"/><g id=\"Pictograms &#194;&#183; placeholder ARASAAC-style (96 px). Every Sinhala label: verify with SLT\"><rect x=\"-1240.5\" y=\"-344.5\" width=\"1481\" height=\"721\" rx=\"23.5\" fill=\"white\"/><rect x=\"-1240.5\" y=\"-344.5\" width=\"1481\" height=\"721\" rx=\"23.5\" stroke=\"#E1E4E8\"/><g id=\"items\"><g id=\"pict/back\"><path id=\"Vector\" d=\"M48 84C67.8823 84 84 67.8823 84 48C84 28.1177 67.8823 12 48 12C28.1177 12 12 28.1177 12 48C12 67.8823 28.1177 84 48 84Z\" fill=\"#E9EEF3\" stroke=\"#1F2933\" stroke-width=\"3.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><path id=\"Vector_2\" d=\"M58 26L36 48L58 70\" stroke=\"#1F2933\" stroke-width=\"7\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/></g></g></g></svg>","bathe":"<svg width=\"100%\" height=\"100%\" viewBox=\"0 0 96 96\" fill=\"none\" xmlns=\"http://www.w3.org/2000/svg\"><rect width=\"96\" height=\"96\" fill=\"#F5F5F5\"/><g id=\"Pictograms &#194;&#183; placeholder ARASAAC-style (96 px). Every Sinhala label: verify with SLT\"><rect x=\"-40.5\" y=\"-224.5\" width=\"1481\" height=\"721\" rx=\"23.5\" fill=\"white\"/><rect x=\"-40.5\" y=\"-224.5\" width=\"1481\" height=\"721\" rx=\"23.5\" stroke=\"#E1E4E8\"/><g id=\"items\"><g id=\"pict/bathe\"><path id=\"Vector\" d=\"M18 86V22C18 15.3333 22 12 30 12H44C52 12 56 16.6667 56 26\" stroke=\"#1F2933\" stroke-width=\"3.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><path id=\"Vector_2\" d=\"M42 30H74L68 40H48L42 30Z\" fill=\"#C9D1DA\" stroke=\"#1F2933\" stroke-width=\"3.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><path id=\"Vector_3\" d=\"M50 52V58M58 50V60M66 52V58M54 70V76M62 68V78\" stroke=\"#2F9BD6\" stroke-width=\"3.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/></g></g></g></svg>","break":"<svg width=\"100%\" height=\"100%\" viewBox=\"0 0 96 96\" fill=\"none\" xmlns=\"http://www.w3.org/2000/svg\"><rect width=\"96\" height=\"96\" fill=\"#F5F5F5\"/><g id=\"Pictograms &#194;&#183; placeholder ARASAAC-style (96 px). Every Sinhala label: verify with SLT\"><rect x=\"-160.5\" y=\"-464.5\" width=\"1481\" height=\"721\" rx=\"23.5\" fill=\"white\"/><rect x=\"-160.5\" y=\"-464.5\" width=\"1481\" height=\"721\" rx=\"23.5\" stroke=\"#E1E4E8\"/><g id=\"items\"><g id=\"pict/break\"><path id=\"Vector\" d=\"M26 72C14 72 8.66667 66.6667 10 56C11.3333 46.6667 17.3333 42.6667 28 44C29.3333 30.6667 36 24 48 24C60 24 67.3333 29.3333 70 40C80.6667 38.6667 86.6667 44 88 56C88 66.6667 82 72 70 72H26Z\" fill=\"#DCEAF7\" stroke=\"#1F2933\" stroke-width=\"3.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><path id=\"Vector_2\" d=\"M36 54C39.3333 57.3333 42.6667 57.3333 46 54M54 54C57.3333 57.3333 60.6667 57.3333 64 54\" stroke=\"#1F2933\" stroke-width=\"3\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/></g></g></g></svg>","bus":"<svg width=\"100%\" height=\"100%\" viewBox=\"0 0 96 96\" fill=\"none\" xmlns=\"http://www.w3.org/2000/svg\"><rect width=\"96\" height=\"96\" fill=\"#F5F5F5\"/><g id=\"Pictograms &#194;&#183; placeholder ARASAAC-style (96 px). Every Sinhala label: verify with SLT\"><rect x=\"-880.5\" y=\"-344.5\" width=\"1481\" height=\"721\" rx=\"23.5\" fill=\"white\"/><rect x=\"-880.5\" y=\"-344.5\" width=\"1481\" height=\"721\" rx=\"23.5\" stroke=\"#E1E4E8\"/><g id=\"items\"><g id=\"pict/bus\"><path id=\"Vector\" d=\"M80 18H16C11.5817 18 8 21.5817 8 26V68C8 72.4183 11.5817 76 16 76H80C84.4183 76 88 72.4183 88 68V26C88 21.5817 84.4183 18 80 18Z\" fill=\"#F2994A\" stroke=\"#1F2933\" stroke-width=\"3.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><path id=\"Vector_2\" d=\"M34 27H18C16.8954 27 16 27.8954 16 29V43C16 44.1046 16.8954 45 18 45H34C35.1046 45 36 44.1046 36 43V29C36 27.8954 35.1046 27 34 27Z\" fill=\"white\" stroke=\"#1F2933\" stroke-width=\"3.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><path id=\"Vector_3\" d=\"M58 27H42C40.8954 27 40 27.8954 40 29V43C40 44.1046 40.8954 45 42 45H58C59.1046 45 60 44.1046 60 43V29C60 27.8954 59.1046 27 58 27Z\" fill=\"white\" stroke=\"#1F2933\" stroke-width=\"3.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><path id=\"Vector_4\" d=\"M78 27H66C64.8954 27 64 27.8954 64 29V43C64 44.1046 64.8954 45 66 45H78C79.1046 45 80 44.1046 80 43V29C80 27.8954 79.1046 27 78 27Z\" fill=\"white\" stroke=\"#1F2933\" stroke-width=\"3.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><path id=\"Vector_5\" d=\"M8 58H88\" stroke=\"#1F2933\" stroke-width=\"3.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><path id=\"Vector_6\" d=\"M28 86C32.4183 86 36 82.4183 36 78C36 73.5817 32.4183 70 28 70C23.5817 70 20 73.5817 20 78C20 82.4183 23.5817 86 28 86Z\" fill=\"#1F2933\" stroke=\"#1F2933\" stroke-width=\"3.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><path id=\"Vector_7\" d=\"M68 86C72.4183 86 76 82.4183 76 78C76 73.5817 72.4183 70 68 70C63.5817 70 60 73.5817 60 78C60 82.4183 63.5817 86 68 86Z\" fill=\"#1F2933\" stroke=\"#1F2933\" stroke-width=\"3.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/></g></g></g></svg>","child":"<svg width=\"100%\" height=\"100%\" viewBox=\"0 0 96 96\" fill=\"none\" xmlns=\"http://www.w3.org/2000/svg\"><rect width=\"96\" height=\"96\" fill=\"#F5F5F5\"/><g id=\"Pictograms &#194;&#183; placeholder ARASAAC-style (96 px). Every Sinhala label: verify with SLT\"><rect x=\"-640.5\" y=\"-104.5\" width=\"1481\" height=\"721\" rx=\"23.5\" fill=\"white\"/><rect x=\"-640.5\" y=\"-104.5\" width=\"1481\" height=\"721\" rx=\"23.5\" stroke=\"#E1E4E8\"/><g id=\"items\"><g id=\"pict/child\"><path id=\"Vector\" d=\"M48 92C72.3005 92 92 72.3005 92 48C92 23.6995 72.3005 4 48 4C23.6995 4 4 23.6995 4 48C4 72.3005 23.6995 92 48 92Z\" fill=\"#FDE7C8\"/><g id=\"Vector_2\"><path d=\"M24 88V74C24 60.6667 32 54 48 54C64 54 72 60.6667 72 74V88\" fill=\"#6FCF97\"/><path d=\"M24 88V74C24 60.6667 32 54 48 54C64 54 72 60.6667 72 74V88\" stroke=\"#1F2933\" stroke-width=\"3.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/></g><path id=\"Vector_3\" d=\"M48 46C56.2843 46 63 39.2843 63 31C63 22.7157 56.2843 16 48 16C39.7157 16 33 22.7157 33 31C33 39.2843 39.7157 46 48 46Z\" fill=\"#C98E62\" stroke=\"#1F2933\" stroke-width=\"3.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><path id=\"Vector_4\" d=\"M33 30C33 20 38 15 48 15C58 15 63 20 63 30C58.3333 24.6667 53.3333 22.3333 48 23C42.6667 22.3333 37.6667 24.6667 33 30Z\" fill=\"#2B2B2B\" stroke=\"#1F2933\" stroke-width=\"3.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><path id=\"Vector_5\" d=\"M43 35.2C44.215 35.2 45.2 34.215 45.2 33C45.2 31.785 44.215 30.8 43 30.8C41.785 30.8 40.8 31.785 40.8 33C40.8 34.215 41.785 35.2 43 35.2Z\" fill=\"#1F2933\"/><path id=\"Vector_6\" d=\"M53 35.2C54.215 35.2 55.2 34.215 55.2 33C55.2 31.785 54.215 30.8 53 30.8C51.785 30.8 50.8 31.785 50.8 33C50.8 34.215 51.785 35.2 53 35.2Z\" fill=\"#1F2933\"/><path id=\"Vector_7\" d=\"M43 40C46.3333 42 49.6667 42 53 40\" stroke=\"#1F2933\" stroke-width=\"2.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/></g></g></g></svg>","clear":"<svg width=\"100%\" height=\"100%\" viewBox=\"0 0 96 96\" fill=\"none\" xmlns=\"http://www.w3.org/2000/svg\"><rect width=\"96\" height=\"96\" fill=\"#F5F5F5\"/><g id=\"Pictograms &#194;&#183; placeholder ARASAAC-style (96 px). Every Sinhala label: verify with SLT\"><rect x=\"-1240.5\" y=\"-464.5\" width=\"1481\" height=\"721\" rx=\"23.5\" fill=\"white\"/><rect x=\"-1240.5\" y=\"-464.5\" width=\"1481\" height=\"721\" rx=\"23.5\" stroke=\"#E1E4E8\"/><g id=\"items\"><g id=\"pict/clear\"><path id=\"Vector\" d=\"M18 64L52 30L78 56L56 78H32L18 64Z\" fill=\"#F4A7B9\" stroke=\"#1F2933\" stroke-width=\"3.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><path id=\"Vector_2\" d=\"M34 48L60 74\" stroke=\"#1F2933\" stroke-width=\"3.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><path id=\"Vector_3\" d=\"M56 80H86\" stroke=\"#1F2933\" stroke-width=\"3.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/></g></g></g></svg>","drink":"<svg width=\"100%\" height=\"100%\" viewBox=\"0 0 96 96\" fill=\"none\" xmlns=\"http://www.w3.org/2000/svg\"><rect width=\"96\" height=\"96\" fill=\"#F5F5F5\"/><g id=\"Pictograms &#194;&#183; placeholder ARASAAC-style (96 px). Every Sinhala label: verify with SLT\"><rect x=\"-1000.5\" y=\"-104.5\" width=\"1481\" height=\"721\" rx=\"23.5\" fill=\"white\"/><rect x=\"-1000.5\" y=\"-104.5\" width=\"1481\" height=\"721\" rx=\"23.5\" stroke=\"#E1E4E8\"/><g id=\"items\"><g id=\"pict/drink\"><path id=\"Vector\" d=\"M26 34H70L64 86H32L26 34Z\" fill=\"#56CCF2\" stroke=\"#1F2933\" stroke-width=\"3.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><path id=\"Vector_2\" d=\"M52 34L62 10H74\" stroke=\"#1F2933\" stroke-width=\"4\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/></g></g></g></svg>","drinks":"<svg width=\"100%\" height=\"100%\" viewBox=\"0 0 96 96\" fill=\"none\" xmlns=\"http://www.w3.org/2000/svg\"><rect width=\"96\" height=\"96\" fill=\"#F5F5F5\"/><g id=\"Pictograms &#194;&#183; placeholder ARASAAC-style (96 px). Every Sinhala label: verify with SLT\"><rect x=\"-400.5\" y=\"-464.5\" width=\"1481\" height=\"721\" rx=\"23.5\" fill=\"white\"/><rect x=\"-400.5\" y=\"-464.5\" width=\"1481\" height=\"721\" rx=\"23.5\" stroke=\"#E1E4E8\"/><g id=\"items\"><g id=\"pict/drinks\"><path id=\"Vector\" d=\"M40 36H22C19.7909 36 18 37.7909 18 40V82C18 84.2091 19.7909 86 22 86H40C42.2091 86 44 84.2091 44 82V40C44 37.7909 42.2091 36 40 36Z\" fill=\"#6FCF97\" stroke=\"#1F2933\" stroke-width=\"3.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><path id=\"Vector_2\" d=\"M25 36V20H37V36\" stroke=\"#1F2933\" stroke-width=\"3.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><path id=\"Vector_3\" d=\"M52 40H84L80 86H56L52 40Z\" fill=\"#F2994A\" stroke=\"#1F2933\" stroke-width=\"3.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/></g></g></g></svg>","eat":"<svg width=\"100%\" height=\"100%\" viewBox=\"0 0 96 96\" fill=\"none\" xmlns=\"http://www.w3.org/2000/svg\"><rect width=\"96\" height=\"96\" fill=\"#F5F5F5\"/><g id=\"Pictograms &#194;&#183; placeholder ARASAAC-style (96 px). Every Sinhala label: verify with SLT\"><rect x=\"-880.5\" y=\"-104.5\" width=\"1481\" height=\"721\" rx=\"23.5\" fill=\"white\"/><rect x=\"-880.5\" y=\"-104.5\" width=\"1481\" height=\"721\" rx=\"23.5\" stroke=\"#E1E4E8\"/><g id=\"items\"><g id=\"pict/eat\"><path id=\"Vector\" d=\"M38 74C53.464 74 66 61.464 66 46C66 30.536 53.464 18 38 18C22.536 18 10 30.536 10 46C10 61.464 22.536 74 38 74Z\" fill=\"#C98E62\" stroke=\"#1F2933\" stroke-width=\"3.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><path id=\"Vector_2\" d=\"M30 42.2C31.215 42.2 32.2 41.215 32.2 40C32.2 38.785 31.215 37.8 30 37.8C28.785 37.8 27.8 38.785 27.8 40C27.8 41.215 28.785 42.2 30 42.2Z\" fill=\"#1F2933\"/><path id=\"Vector_3\" d=\"M46 42.2C47.215 42.2 48.2 41.215 48.2 40C48.2 38.785 47.215 37.8 46 37.8C44.785 37.8 43.8 38.785 43.8 40C43.8 41.215 44.785 42.2 46 42.2Z\" fill=\"#1F2933\"/><path id=\"Vector_4\" d=\"M38 63C41.866 63 45 60.7614 45 58C45 55.2386 41.866 53 38 53C34.134 53 31 55.2386 31 58C31 60.7614 34.134 63 38 63Z\" fill=\"#7A3B2E\" stroke=\"#1F2933\" stroke-width=\"3.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><path id=\"Vector_5\" d=\"M60 62L86 88\" stroke=\"#1F2933\" stroke-width=\"5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><path id=\"Vector_6\" d=\"M50.7573 61.2426C54.2721 64.7574 59.0208 65.7071 61.3639 63.364C63.7071 61.0208 62.7573 56.2721 59.2426 52.7574C55.7279 49.2426 50.9792 48.2929 48.636 50.636C46.2929 52.9792 47.2426 57.7279 50.7573 61.2426Z\" fill=\"#C9D1DA\" stroke=\"#1F2933\" stroke-width=\"3.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/></g></g></g></svg>","feelings":"<svg width=\"100%\" height=\"100%\" viewBox=\"0 0 96 96\" fill=\"none\" xmlns=\"http://www.w3.org/2000/svg\"><rect width=\"96\" height=\"96\" fill=\"#F5F5F5\"/><g id=\"Pictograms &#194;&#183; placeholder ARASAAC-style (96 px). Every Sinhala label: verify with SLT\"><rect x=\"-760.5\" y=\"-464.5\" width=\"1481\" height=\"721\" rx=\"23.5\" fill=\"white\"/><rect x=\"-760.5\" y=\"-464.5\" width=\"1481\" height=\"721\" rx=\"23.5\" stroke=\"#E1E4E8\"/><g id=\"items\"><g id=\"pict/feelings\"><path id=\"Vector\" d=\"M48 84C22.6667 68 9.99999 51.3333 9.99999 34C9.20434 28.9609 10.4431 23.8121 13.4436 19.6863C16.4442 15.5605 20.9609 12.7956 26 12C31.0391 11.2043 36.1879 12.4431 40.3137 15.4436C44.4395 18.4442 47.2043 22.9609 48 28C48.7956 22.9609 51.5605 18.4442 55.6863 15.4436C59.8121 12.4431 64.9609 11.2043 70 12C75.0391 12.7956 79.5558 15.5605 82.5563 19.6863C85.5569 23.8121 86.7956 28.9609 86 34C86 51.3333 73.3333 68 48 84Z\" fill=\"#F4A7B9\" stroke=\"#1F2933\" stroke-width=\"3.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><path id=\"Vector_2\" d=\"M36 45C37.6569 45 39 43.6569 39 42C39 40.3431 37.6569 39 36 39C34.3431 39 33 40.3431 33 42C33 43.6569 34.3431 45 36 45Z\" fill=\"#1F2933\"/><path id=\"Vector_3\" d=\"M60 45C61.6569 45 63 43.6569 63 42C63 40.3431 61.6569 39 60 39C58.3431 39 57 40.3431 57 42C57 43.6569 58.3431 45 60 45Z\" fill=\"#1F2933\"/><path id=\"Vector_4\" d=\"M38 54C44.6667 59.3333 51.3333 59.3333 58 54\" stroke=\"#1F2933\" stroke-width=\"3\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/></g></g></g></svg>","finished":"<svg width=\"100%\" height=\"100%\" viewBox=\"0 0 96 96\" fill=\"none\" xmlns=\"http://www.w3.org/2000/svg\"><rect width=\"96\" height=\"96\" fill=\"#F5F5F5\"/><g id=\"Pictograms &#194;&#183; placeholder ARASAAC-style (96 px). Every Sinhala label: verify with SLT\"><rect x=\"-640.5\" y=\"-224.5\" width=\"1481\" height=\"721\" rx=\"23.5\" fill=\"white\"/><rect x=\"-640.5\" y=\"-224.5\" width=\"1481\" height=\"721\" rx=\"23.5\" stroke=\"#E1E4E8\"/><g id=\"items\"><g id=\"pict/finished\"><path id=\"Vector\" d=\"M14 44H82C80.6667 68 69.3333 80 48 80C26.6667 80 15.3333 68 14 44Z\" fill=\"white\" stroke=\"#1F2933\" stroke-width=\"3.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><path id=\"Vector_2\" d=\"M28 22L34 32M48 14V28M68 22L62 32\" stroke=\"#1F2933\" stroke-width=\"4\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/></g></g></g></svg>","food":"<svg width=\"100%\" height=\"100%\" viewBox=\"0 0 96 96\" fill=\"none\" xmlns=\"http://www.w3.org/2000/svg\"><rect width=\"96\" height=\"96\" fill=\"#F5F5F5\"/><g id=\"Pictograms &#194;&#183; placeholder ARASAAC-style (96 px). Every Sinhala label: verify with SLT\"><rect x=\"-280.5\" y=\"-464.5\" width=\"1481\" height=\"721\" rx=\"23.5\" fill=\"white\"/><rect x=\"-280.5\" y=\"-464.5\" width=\"1481\" height=\"721\" rx=\"23.5\" stroke=\"#E1E4E8\"/><g id=\"items\"><g id=\"pict/food\"><path id=\"Vector\" d=\"M50 78C65.464 78 78 65.464 78 50C78 34.536 65.464 22 50 22C34.536 22 22 34.536 22 50C22 65.464 34.536 78 50 78Z\" fill=\"white\" stroke=\"#1F2933\" stroke-width=\"3.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><path id=\"Vector_2\" d=\"M50 66C58.8366 66 66 58.8366 66 50C66 41.1634 58.8366 34 50 34C41.1634 34 34 41.1634 34 50C34 58.8366 41.1634 66 50 66Z\" fill=\"#F2C94C\" stroke=\"#1F2933\" stroke-width=\"3.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><path id=\"Vector_3\" d=\"M12 14V34M12 34C8 34 6 31.3333 6 26V14M12 34C16 34 18 31.3333 18 26V14M12 34V84\" stroke=\"#1F2933\" stroke-width=\"3\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><path id=\"Vector_4\" d=\"M86 14C90 27.3333 90 36.6667 86 42V84\" stroke=\"#1F2933\" stroke-width=\"3\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/></g></g></g></svg>","go":"<svg width=\"100%\" height=\"100%\" viewBox=\"0 0 96 96\" fill=\"none\" xmlns=\"http://www.w3.org/2000/svg\"><rect width=\"96\" height=\"96\" fill=\"#F5F5F5\"/><g id=\"Pictograms &#194;&#183; placeholder ARASAAC-style (96 px). Every Sinhala label: verify with SLT\"><rect x=\"-1120.5\" y=\"-104.5\" width=\"1481\" height=\"721\" rx=\"23.5\" fill=\"white\"/><rect x=\"-1120.5\" y=\"-104.5\" width=\"1481\" height=\"721\" rx=\"23.5\" stroke=\"#E1E4E8\"/><g id=\"items\"><g id=\"pict/go\"><path id=\"Vector\" d=\"M10 36H50V18L86 48L50 78V60H10V36Z\" fill=\"#6FCF97\" stroke=\"#1F2933\" stroke-width=\"3.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/></g></g></g></svg>","happy":"<svg width=\"100%\" height=\"100%\" viewBox=\"0 0 96 96\" fill=\"none\" xmlns=\"http://www.w3.org/2000/svg\"><rect width=\"96\" height=\"96\" fill=\"#F5F5F5\"/><g id=\"Pictograms &#194;&#183; placeholder ARASAAC-style (96 px). Every Sinhala label: verify with SLT\"><rect x=\"-280.5\" y=\"-224.5\" width=\"1481\" height=\"721\" rx=\"23.5\" fill=\"white\"/><rect x=\"-280.5\" y=\"-224.5\" width=\"1481\" height=\"721\" rx=\"23.5\" stroke=\"#E1E4E8\"/><g id=\"items\"><g id=\"pict/happy\"><path id=\"Vector\" d=\"M48 84C67.8823 84 84 67.8823 84 48C84 28.1177 67.8823 12 48 12C28.1177 12 12 28.1177 12 48C12 67.8823 28.1177 84 48 84Z\" fill=\"#F2C94C\" stroke=\"#1F2933\" stroke-width=\"3.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><path id=\"Vector_2\" d=\"M36 44C38.2091 44 40 42.2091 40 40C40 37.7909 38.2091 36 36 36C33.7909 36 32 37.7909 32 40C32 42.2091 33.7909 44 36 44Z\" fill=\"#1F2933\"/><path id=\"Vector_3\" d=\"M60 44C62.2091 44 64 42.2091 64 40C64 37.7909 62.2091 36 60 36C57.7909 36 56 37.7909 56 40C56 42.2091 57.7909 44 60 44Z\" fill=\"#1F2933\"/><path id=\"Vector_4\" d=\"M30 56C42 68 54 68 66 56\" stroke=\"#1F2933\" stroke-width=\"3.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/></g></g></g></svg>","help":"<svg width=\"100%\" height=\"100%\" viewBox=\"0 0 96 96\" fill=\"none\" xmlns=\"http://www.w3.org/2000/svg\"><rect width=\"96\" height=\"96\" fill=\"#F5F5F5\"/><g id=\"Pictograms &#194;&#183; placeholder ARASAAC-style (96 px). Every Sinhala label: verify with SLT\"><rect x=\"-1000.5\" y=\"-224.5\" width=\"1481\" height=\"721\" rx=\"23.5\" fill=\"white\"/><rect x=\"-1000.5\" y=\"-224.5\" width=\"1481\" height=\"721\" rx=\"23.5\" stroke=\"#E1E4E8\"/><g id=\"items\"><g id=\"pict/help\"><path id=\"Vector\" d=\"M48 84C67.8823 84 84 67.8823 84 48C84 28.1177 67.8823 12 48 12C28.1177 12 12 28.1177 12 48C12 67.8823 28.1177 84 48 84Z\" fill=\"white\" stroke=\"#1F2933\" stroke-width=\"3.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><path id=\"Vector_2\" d=\"M48 12C57.5478 12 66.7045 15.7928 73.4558 22.5442C80.2071 29.2955 84 38.4522 84 48H64C64 43.7565 62.3143 39.6869 59.3137 36.6863C56.3131 33.6857 52.2435 32 48 32V12Z\" fill=\"#F2994A\" stroke=\"#1F2933\" stroke-width=\"3.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><path id=\"Vector_3\" d=\"M48 84C38.4522 84 29.2955 80.2071 22.5442 73.4558C15.7928 66.7045 12 57.5478 12 48H32C32 52.2435 33.6857 56.3131 36.6863 59.3137C39.6869 62.3143 43.7565 64 48 64V84Z\" fill=\"#F2994A\" stroke=\"#1F2933\" stroke-width=\"3.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><path id=\"Vector_4\" d=\"M48 64C56.8366 64 64 56.8366 64 48C64 39.1634 56.8366 32 48 32C39.1634 32 32 39.1634 32 48C32 56.8366 39.1634 64 48 64Z\" fill=\"#FAF7F2\" stroke=\"#1F2933\" stroke-width=\"3.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/></g></g></g></svg>","home":"<svg width=\"100%\" height=\"100%\" viewBox=\"0 0 96 96\" fill=\"none\" xmlns=\"http://www.w3.org/2000/svg\"><rect width=\"96\" height=\"96\" fill=\"#F5F5F5\"/><g id=\"Pictograms &#194;&#183; placeholder ARASAAC-style (96 px). Every Sinhala label: verify with SLT\"><rect x=\"-1120.5\" y=\"-344.5\" width=\"1481\" height=\"721\" rx=\"23.5\" fill=\"white\"/><rect x=\"-1120.5\" y=\"-344.5\" width=\"1481\" height=\"721\" rx=\"23.5\" stroke=\"#E1E4E8\"/><g id=\"items\"><g id=\"pict/home\"><path id=\"Vector\" d=\"M76 42H20V84H76V42Z\" fill=\"#F2C94C\" stroke=\"#1F2933\" stroke-width=\"3.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><path id=\"Vector_2\" d=\"M8 46L48 12L88 46H8Z\" fill=\"#F2994A\" stroke=\"#1F2933\" stroke-width=\"3.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><path id=\"Vector_3\" d=\"M56 56H40V84H56V56Z\" fill=\"white\" stroke=\"#1F2933\" stroke-width=\"3.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/></g></g></g></svg>","hoppers":"<svg width=\"100%\" height=\"100%\" viewBox=\"0 0 96 96\" fill=\"none\" xmlns=\"http://www.w3.org/2000/svg\"><rect width=\"96\" height=\"96\" fill=\"#F5F5F5\"/><g id=\"Pictograms &#194;&#183; placeholder ARASAAC-style (96 px). Every Sinhala label: verify with SLT\"><rect x=\"-640.5\" y=\"-344.5\" width=\"1481\" height=\"721\" rx=\"23.5\" fill=\"white\"/><rect x=\"-640.5\" y=\"-344.5\" width=\"1481\" height=\"721\" rx=\"23.5\" stroke=\"#E1E4E8\"/><g id=\"items\"><g id=\"pict/hoppers\"><path id=\"Vector\" d=\"M8 36C34.6667 81.3333 61.3333 81.3333 88 36C61.3333 46.6667 34.6667 46.6667 8 36Z\" fill=\"#E3A857\" stroke=\"#1F2933\" stroke-width=\"3.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><path id=\"Vector_2\" d=\"M48 64C57.9411 64 66 59.5228 66 54C66 48.4772 57.9411 44 48 44C38.0589 44 30 48.4772 30 54C30 59.5228 38.0589 64 48 64Z\" fill=\"white\" stroke=\"#1F2933\" stroke-width=\"3.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><path id=\"Vector_3\" d=\"M48 60C51.3137 60 54 57.3137 54 54C54 50.6863 51.3137 48 48 48C44.6863 48 42 50.6863 42 54C42 57.3137 44.6863 60 48 60Z\" fill=\"#F2C94C\" stroke=\"#1F2933\" stroke-width=\"3.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/></g></g></g></svg>","hurts":"<svg width=\"100%\" height=\"100%\" viewBox=\"0 0 96 96\" fill=\"none\" xmlns=\"http://www.w3.org/2000/svg\"><rect width=\"96\" height=\"96\" fill=\"#F5F5F5\"/><g id=\"Pictograms &#194;&#183; placeholder ARASAAC-style (96 px). Every Sinhala label: verify with SLT\"><rect x=\"-520.5\" y=\"-224.5\" width=\"1481\" height=\"721\" rx=\"23.5\" fill=\"white\"/><rect x=\"-520.5\" y=\"-224.5\" width=\"1481\" height=\"721\" rx=\"23.5\" stroke=\"#E1E4E8\"/><g id=\"items\"><g id=\"pict/hurts\"><path id=\"Vector\" d=\"M48 86C67.8823 86 84 69.8823 84 50C84 30.1177 67.8823 14 48 14C28.1177 14 12 30.1177 12 50C12 69.8823 28.1177 86 48 86Z\" fill=\"#E8B98F\" stroke=\"#1F2933\" stroke-width=\"3.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><path id=\"Vector_2\" d=\"M28 42L37 46L28 50M68 42L59 46L68 50\" stroke=\"#1F2933\" stroke-width=\"3.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><path id=\"Vector_3\" d=\"M32 66C34.6667 62 37.3333 62 40 66C42.6667 70 45.3333 70 48 66C50.6667 62 53.3333 62 56 66C58.6667 70 61.3333 70 64 66\" stroke=\"#1F2933\" stroke-width=\"3.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><path id=\"Vector_4\" d=\"M77.8612 18.9199L63.1388 10.4199C60.5082 8.90108 57.1445 9.80239 55.6257 12.433C54.1069 15.0636 55.0082 18.4274 57.6388 19.9461L72.3612 28.4461C74.9919 29.9649 78.3556 29.0636 79.8744 26.433C81.3932 23.8024 80.4919 20.4386 77.8612 18.9199Z\" fill=\"#F7E1C4\" stroke=\"#1F2933\" stroke-width=\"3.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/></g></g></g></svg>","kiribath":"<svg width=\"100%\" height=\"100%\" viewBox=\"0 0 96 96\" fill=\"none\" xmlns=\"http://www.w3.org/2000/svg\"><rect width=\"96\" height=\"96\" fill=\"#F5F5F5\"/><g id=\"Pictograms &#194;&#183; placeholder ARASAAC-style (96 px). Every Sinhala label: verify with SLT\"><rect x=\"-280.5\" y=\"-344.5\" width=\"1481\" height=\"721\" rx=\"23.5\" fill=\"white\"/><rect x=\"-280.5\" y=\"-344.5\" width=\"1481\" height=\"721\" rx=\"23.5\" stroke=\"#E1E4E8\"/><g id=\"items\"><g id=\"pict/kiribath\"><path id=\"Vector\" d=\"M48 80C71.196 80 90 72.8366 90 64C90 55.1634 71.196 48 48 48C24.804 48 6 55.1634 6 64C6 72.8366 24.804 80 48 80Z\" fill=\"white\" stroke=\"#1F2933\" stroke-width=\"3.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><path id=\"Vector_2\" d=\"M28 58L39 47L50 58L39 69L28 58Z\" fill=\"#FFF3C4\" stroke=\"#1F2933\" stroke-width=\"3.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><path id=\"Vector_3\" d=\"M47 58L58 47L69 58L58 69L47 58Z\" fill=\"#FFF3C4\" stroke=\"#1F2933\" stroke-width=\"3.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><path id=\"Vector_4\" d=\"M38 44L48 34L58 44L48 54L38 44Z\" fill=\"#FFF3C4\" stroke=\"#1F2933\" stroke-width=\"3.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/></g></g></g></svg>","kottu":"<svg width=\"100%\" height=\"100%\" viewBox=\"0 0 96 96\" fill=\"none\" xmlns=\"http://www.w3.org/2000/svg\"><rect width=\"96\" height=\"96\" fill=\"#F5F5F5\"/><g id=\"Pictograms &#194;&#183; placeholder ARASAAC-style (96 px). Every Sinhala label: verify with SLT\"><rect x=\"-400.5\" y=\"-344.5\" width=\"1481\" height=\"721\" rx=\"23.5\" fill=\"white\"/><rect x=\"-400.5\" y=\"-344.5\" width=\"1481\" height=\"721\" rx=\"23.5\" stroke=\"#E1E4E8\"/><g id=\"items\"><g id=\"pict/kottu\"><path id=\"Vector\" d=\"M48 83C71.196 83 90 76.2843 90 68C90 59.7157 71.196 53 48 53C24.804 53 6 59.7157 6 68C6 76.2843 24.804 83 48 83Z\" fill=\"white\" stroke=\"#1F2933\" stroke-width=\"3.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><path id=\"Vector_2\" d=\"M16 66C18.6667 46 29.3333 35.3333 48 34C66.6667 35.3333 77.3333 46 80 66H16Z\" fill=\"#E3A857\" stroke=\"#1F2933\" stroke-width=\"3.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><path id=\"Vector_3\" d=\"M30 52L36 48M44 46L50 50M58 50L64 46M38 58L44 56M54 58L60 56\" stroke=\"#3E8E5A\" stroke-width=\"3.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><path id=\"Vector_4\" d=\"M62 59C63.6569 59 65 57.6569 65 56C65 54.3431 63.6569 53 62 53C60.3431 53 59 54.3431 59 56C59 57.6569 60.3431 59 62 59Z\" fill=\"#F2994A\"/><path id=\"Vector_5\" d=\"M34 63C35.6569 63 37 61.6569 37 60C37 58.3431 35.6569 57 34 57C32.3431 57 31 58.3431 31 60C31 61.6569 32.3431 63 34 63Z\" fill=\"#F2994A\"/></g></g></g></svg>","me":"<svg width=\"100%\" height=\"100%\" viewBox=\"0 0 96 96\" fill=\"none\" xmlns=\"http://www.w3.org/2000/svg\"><rect width=\"96\" height=\"96\" fill=\"#F5F5F5\"/><g id=\"Pictograms &#194;&#183; placeholder ARASAAC-style (96 px). Every Sinhala label: verify with SLT\"><rect x=\"-40.5\" y=\"-104.5\" width=\"1481\" height=\"721\" rx=\"23.5\" fill=\"white\"/><rect x=\"-40.5\" y=\"-104.5\" width=\"1481\" height=\"721\" rx=\"23.5\" stroke=\"#E1E4E8\"/><g id=\"items\"><g id=\"pict/me\"><g id=\"Vector\"><path d=\"M24 88V74C24 60.6667 32 54 48 54C64 54 72 60.6667 72 74V88\" fill=\"#6FA8DC\"/><path d=\"M24 88V74C24 60.6667 32 54 48 54C64 54 72 60.6667 72 74V88\" stroke=\"#1F2933\" stroke-width=\"3.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/></g><path id=\"Vector_2\" d=\"M48 46C56.2843 46 63 39.2843 63 31C63 22.7157 56.2843 16 48 16C39.7157 16 33 22.7157 33 31C33 39.2843 39.7157 46 48 46Z\" fill=\"#C98E62\" stroke=\"#1F2933\" stroke-width=\"3.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><path id=\"Vector_3\" d=\"M33 30C33 20 38 15 48 15C58 15 63 20 63 30C58.3333 24.6667 53.3333 22.3333 48 23C42.6667 22.3333 37.6667 24.6667 33 30Z\" fill=\"#2B2B2B\" stroke=\"#1F2933\" stroke-width=\"3.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><path id=\"Vector_4\" d=\"M43 35.2C44.215 35.2 45.2 34.215 45.2 33C45.2 31.785 44.215 30.8 43 30.8C41.785 30.8 40.8 31.785 40.8 33C40.8 34.215 41.785 35.2 43 35.2Z\" fill=\"#1F2933\"/><path id=\"Vector_5\" d=\"M53 35.2C54.215 35.2 55.2 34.215 55.2 33C55.2 31.785 54.215 30.8 53 30.8C51.785 30.8 50.8 31.785 50.8 33C50.8 34.215 51.785 35.2 53 35.2Z\" fill=\"#1F2933\"/><path id=\"Vector_6\" d=\"M43 40C46.3333 42 49.6667 42 53 40\" stroke=\"#1F2933\" stroke-width=\"2.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><path id=\"Vector_7\" d=\"M88 26L62 60\" stroke=\"#1F2933\" stroke-width=\"5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><path id=\"Vector_8\" d=\"M62 46V60H76\" stroke=\"#1F2933\" stroke-width=\"5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/></g></g></g></svg>","milk":"<svg width=\"100%\" height=\"100%\" viewBox=\"0 0 96 96\" fill=\"none\" xmlns=\"http://www.w3.org/2000/svg\"><rect width=\"96\" height=\"96\" fill=\"#F5F5F5\"/><g id=\"Pictograms &#194;&#183; placeholder ARASAAC-style (96 px). Every Sinhala label: verify with SLT\"><rect x=\"-160.5\" y=\"-344.5\" width=\"1481\" height=\"721\" rx=\"23.5\" fill=\"white\"/><rect x=\"-160.5\" y=\"-344.5\" width=\"1481\" height=\"721\" rx=\"23.5\" stroke=\"#E1E4E8\"/><g id=\"items\"><g id=\"pict/milk\"><path id=\"Vector\" d=\"M30 30L40 12H56L66 30V86H30V30Z\" fill=\"white\" stroke=\"#1F2933\" stroke-width=\"3.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><path id=\"Vector_2\" d=\"M30 30H66\" stroke=\"#1F2933\" stroke-width=\"3.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><path id=\"Vector_3\" d=\"M58 48H38V66H58V48Z\" fill=\"#56CCF2\" stroke=\"#1F2933\" stroke-width=\"2.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/></g></g></g></svg>","more":"<svg width=\"100%\" height=\"100%\" viewBox=\"0 0 96 96\" fill=\"none\" xmlns=\"http://www.w3.org/2000/svg\"><rect width=\"96\" height=\"96\" fill=\"#F5F5F5\"/><g id=\"Pictograms &#194;&#183; placeholder ARASAAC-style (96 px). Every Sinhala label: verify with SLT\"><rect x=\"-760.5\" y=\"-224.5\" width=\"1481\" height=\"721\" rx=\"23.5\" fill=\"white\"/><rect x=\"-760.5\" y=\"-224.5\" width=\"1481\" height=\"721\" rx=\"23.5\" stroke=\"#E1E4E8\"/><g id=\"items\"><g id=\"pict/more\"><path id=\"Vector\" d=\"M30 80C38.8366 80 46 72.8366 46 64C46 55.1634 38.8366 48 30 48C21.1634 48 14 55.1634 14 64C14 72.8366 21.1634 80 30 80Z\" fill=\"#F2C94C\" stroke=\"#1F2933\" stroke-width=\"3.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><path id=\"Vector_2\" d=\"M58 80C66.8366 80 74 72.8366 74 64C74 55.1634 66.8366 48 58 48C49.1634 48 42 55.1634 42 64C42 72.8366 49.1634 80 58 80Z\" fill=\"#F2C94C\" stroke=\"#1F2933\" stroke-width=\"3.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><path id=\"Vector_3\" d=\"M70 10V40M55 25H85\" stroke=\"#1F2933\" stroke-width=\"6\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/></g></g></g></svg>","no":"<svg width=\"100%\" height=\"100%\" viewBox=\"0 0 96 96\" fill=\"none\" xmlns=\"http://www.w3.org/2000/svg\"><rect width=\"96\" height=\"96\" fill=\"#F5F5F5\"/><g id=\"Pictograms &#194;&#183; placeholder ARASAAC-style (96 px). Every Sinhala label: verify with SLT\"><rect x=\"-1240.5\" y=\"-224.5\" width=\"1481\" height=\"721\" rx=\"23.5\" fill=\"white\"/><rect x=\"-1240.5\" y=\"-224.5\" width=\"1481\" height=\"721\" rx=\"23.5\" stroke=\"#E1E4E8\"/><g id=\"items\"><g id=\"pict/no\"><path id=\"Vector\" d=\"M48 84C67.8823 84 84 67.8823 84 48C84 28.1177 67.8823 12 48 12C28.1177 12 12 28.1177 12 48C12 67.8823 28.1177 84 48 84Z\" fill=\"#C9D1DA\" stroke=\"#1F2933\" stroke-width=\"3.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><path id=\"Vector_2\" d=\"M34 34L62 62M62 34L34 62\" stroke=\"#1F2933\" stroke-width=\"7\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/></g></g></g></svg>","peoplecat":"<svg width=\"100%\" height=\"100%\" viewBox=\"0 0 96 96\" fill=\"none\" xmlns=\"http://www.w3.org/2000/svg\"><rect width=\"96\" height=\"96\" fill=\"#F5F5F5\"/><g id=\"Pictograms &#194;&#183; placeholder ARASAAC-style (96 px). Every Sinhala label: verify with SLT\"><rect x=\"-640.5\" y=\"-464.5\" width=\"1481\" height=\"721\" rx=\"23.5\" fill=\"white\"/><rect x=\"-640.5\" y=\"-464.5\" width=\"1481\" height=\"721\" rx=\"23.5\" stroke=\"#E1E4E8\"/><g id=\"items\"><g id=\"pict/peoplecat\"><path id=\"Vector\" d=\"M32 42C38.6274 42 44 36.6274 44 30C44 23.3726 38.6274 18 32 18C25.3726 18 20 23.3726 20 30C20 36.6274 25.3726 42 32 42Z\" fill=\"#C98E62\" stroke=\"#1F2933\" stroke-width=\"3.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><g id=\"Vector_2\"><path d=\"M10 82V68C10 56 17.3333 50 32 50C46.6667 50 54 56 54 68V82\" fill=\"#6FA8DC\"/><path d=\"M10 82V68C10 56 17.3333 50 32 50C46.6667 50 54 56 54 68V82\" stroke=\"#1F2933\" stroke-width=\"3.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/></g><path id=\"Vector_3\" d=\"M66 47C72.0751 47 77 42.0751 77 36C77 29.9249 72.0751 25 66 25C59.9249 25 55 29.9249 55 36C55 42.0751 59.9249 47 66 47Z\" fill=\"#C98E62\" stroke=\"#1F2933\" stroke-width=\"3.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><g id=\"Vector_4\"><path d=\"M48 84V72C48 61.3333 54 56 66 56C79.3333 56 86 61.3333 86 72V84\" fill=\"#F2994A\"/><path d=\"M48 84V72C48 61.3333 54 56 66 56C79.3333 56 86 61.3333 86 72V84\" stroke=\"#1F2933\" stroke-width=\"3.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/></g></g></g></g></svg>","places":"<svg width=\"100%\" height=\"100%\" viewBox=\"0 0 96 96\" fill=\"none\" xmlns=\"http://www.w3.org/2000/svg\"><rect width=\"96\" height=\"96\" fill=\"#F5F5F5\"/><g id=\"Pictograms &#194;&#183; placeholder ARASAAC-style (96 px). Every Sinhala label: verify with SLT\"><rect x=\"-520.5\" y=\"-464.5\" width=\"1481\" height=\"721\" rx=\"23.5\" fill=\"white\"/><rect x=\"-520.5\" y=\"-464.5\" width=\"1481\" height=\"721\" rx=\"23.5\" stroke=\"#E1E4E8\"/><g id=\"items\"><g id=\"pict/places\"><path id=\"Vector\" d=\"M48 90C29.3333 67.3333 20 50 20 38C20 30.5739 22.95 23.452 28.201 18.201C33.452 12.95 40.5739 10 48 10C55.4261 10 62.548 12.95 67.799 18.201C73.05 23.452 76 30.5739 76 38C76 50 66.6667 67.3333 48 90Z\" fill=\"#6FCF97\" stroke=\"#1F2933\" stroke-width=\"3.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><path id=\"Vector_2\" d=\"M48 49C54.0751 49 59 44.0751 59 38C59 31.9249 54.0751 27 48 27C41.9249 27 37 31.9249 37 38C37 44.0751 41.9249 49 48 49Z\" fill=\"white\" stroke=\"#1F2933\" stroke-width=\"3.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/></g></g></g></svg>","play":"<svg width=\"100%\" height=\"100%\" viewBox=\"0 0 96 96\" fill=\"none\" xmlns=\"http://www.w3.org/2000/svg\"><rect width=\"96\" height=\"96\" fill=\"#F5F5F5\"/><g id=\"Pictograms &#194;&#183; placeholder ARASAAC-style (96 px). Every Sinhala label: verify with SLT\"><rect x=\"-1240.5\" y=\"-104.5\" width=\"1481\" height=\"721\" rx=\"23.5\" fill=\"white\"/><rect x=\"-1240.5\" y=\"-104.5\" width=\"1481\" height=\"721\" rx=\"23.5\" stroke=\"#E1E4E8\"/><g id=\"items\"><g id=\"pict/play\"><path id=\"Vector\" d=\"M48 82C66.7777 82 82 66.7777 82 48C82 29.2223 66.7777 14 48 14C29.2223 14 14 29.2223 14 48C14 66.7777 29.2223 82 48 82Z\" fill=\"#F2C94C\" stroke=\"#1F2933\" stroke-width=\"3.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><path id=\"Vector_2\" d=\"M14 48H82M48 14C34.6667 36.6667 34.6667 59.3333 48 82C61.3333 59.3333 61.3333 36.6667 48 14Z\" stroke=\"#1F2933\" stroke-width=\"3.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/></g></g></g></svg>","playcat":"<svg width=\"100%\" height=\"100%\" viewBox=\"0 0 96 96\" fill=\"none\" xmlns=\"http://www.w3.org/2000/svg\"><rect width=\"96\" height=\"96\" fill=\"#F5F5F5\"/><g id=\"Pictograms &#194;&#183; placeholder ARASAAC-style (96 px). Every Sinhala label: verify with SLT\"><rect x=\"-880.5\" y=\"-464.5\" width=\"1481\" height=\"721\" rx=\"23.5\" fill=\"white\"/><rect x=\"-880.5\" y=\"-464.5\" width=\"1481\" height=\"721\" rx=\"23.5\" stroke=\"#E1E4E8\"/><g id=\"items\"><g id=\"pict/playcat\"><path id=\"Vector\" d=\"M42 48H16C13.7909 48 12 49.7909 12 52V78C12 80.2091 13.7909 82 16 82H42C44.2091 82 46 80.2091 46 78V52C46 49.7909 44.2091 48 42 48Z\" fill=\"#56CCF2\" stroke=\"#1F2933\" stroke-width=\"3.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><path id=\"Vector_2\" d=\"M80 48H54C51.7909 48 50 49.7909 50 52V78C50 80.2091 51.7909 82 54 82H80C82.2091 82 84 80.2091 84 78V52C84 49.7909 82.2091 48 80 48Z\" fill=\"#F2C94C\" stroke=\"#1F2933\" stroke-width=\"3.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><path id=\"Vector_3\" d=\"M61 12H35C32.7909 12 31 13.7909 31 16V42C31 44.2091 32.7909 46 35 46H61C63.2091 46 65 44.2091 65 42V16C65 13.7909 63.2091 12 61 12Z\" fill=\"#6FCF97\" stroke=\"#1F2933\" stroke-width=\"3.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/></g></g></g></svg>","quick":"<svg width=\"100%\" height=\"100%\" viewBox=\"0 0 96 96\" fill=\"none\" xmlns=\"http://www.w3.org/2000/svg\"><rect width=\"96\" height=\"96\" fill=\"#F5F5F5\"/><g id=\"Pictograms &#194;&#183; placeholder ARASAAC-style (96 px). Every Sinhala label: verify with SLT\"><rect x=\"-40.5\" y=\"-464.5\" width=\"1481\" height=\"721\" rx=\"23.5\" fill=\"white\"/><rect x=\"-40.5\" y=\"-464.5\" width=\"1481\" height=\"721\" rx=\"23.5\" stroke=\"#E1E4E8\"/><g id=\"items\"><g id=\"pict/quick\"><path id=\"Vector\" d=\"M54 8L20 54H45L38 88L76 38H51L54 8Z\" fill=\"#F2C94C\" stroke=\"#1F2933\" stroke-width=\"3.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/></g></g></g></svg>","rice":"<svg width=\"100%\" height=\"100%\" viewBox=\"0 0 96 96\" fill=\"none\" xmlns=\"http://www.w3.org/2000/svg\"><rect width=\"96\" height=\"96\" fill=\"#F5F5F5\"/><g id=\"Pictograms &#194;&#183; placeholder ARASAAC-style (96 px). Every Sinhala label: verify with SLT\"><rect x=\"-520.5\" y=\"-344.5\" width=\"1481\" height=\"721\" rx=\"23.5\" fill=\"white\"/><rect x=\"-520.5\" y=\"-344.5\" width=\"1481\" height=\"721\" rx=\"23.5\" stroke=\"#E1E4E8\"/><g id=\"items\"><g id=\"pict/rice\"><path id=\"Vector\" d=\"M18 48C20.6667 29.3333 30.6667 20 48 20C65.3333 20 75.3333 29.3333 78 48H18Z\" fill=\"white\" stroke=\"#1F2933\" stroke-width=\"3.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><path id=\"Vector_2\" d=\"M10 48H86C84.6667 72 72 84 48 84C24 84 11.3333 72 10 48Z\" fill=\"#56CCF2\" stroke=\"#1F2933\" stroke-width=\"3.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><path id=\"Vector_3\" d=\"M36 34H37M48 30H49M58 36H59M42 42H43M54 44H55\" stroke=\"#1F2933\" stroke-width=\"3\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/></g></g></g></svg>","sad":"<svg width=\"100%\" height=\"100%\" viewBox=\"0 0 96 96\" fill=\"none\" xmlns=\"http://www.w3.org/2000/svg\"><rect width=\"96\" height=\"96\" fill=\"#F5F5F5\"/><g id=\"Pictograms &#194;&#183; placeholder ARASAAC-style (96 px). Every Sinhala label: verify with SLT\"><rect x=\"-400.5\" y=\"-224.5\" width=\"1481\" height=\"721\" rx=\"23.5\" fill=\"white\"/><rect x=\"-400.5\" y=\"-224.5\" width=\"1481\" height=\"721\" rx=\"23.5\" stroke=\"#E1E4E8\"/><g id=\"items\"><g id=\"pict/sad\"><path id=\"Vector\" d=\"M48 84C67.8823 84 84 67.8823 84 48C84 28.1177 67.8823 12 48 12C28.1177 12 12 28.1177 12 48C12 67.8823 28.1177 84 48 84Z\" fill=\"#A9CFEA\" stroke=\"#1F2933\" stroke-width=\"3.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><path id=\"Vector_2\" d=\"M36 46C38.2091 46 40 44.2091 40 42C40 39.7909 38.2091 38 36 38C33.7909 38 32 39.7909 32 42C32 44.2091 33.7909 46 36 46Z\" fill=\"#1F2933\"/><path id=\"Vector_3\" d=\"M60 46C62.2091 46 64 44.2091 64 42C64 39.7909 62.2091 38 60 38C57.7909 38 56 39.7909 56 42C56 44.2091 57.7909 46 60 46Z\" fill=\"#1F2933\"/><path id=\"Vector_4\" d=\"M34 68C43.3333 60 52.6667 60 62 68\" stroke=\"#1F2933\" stroke-width=\"3.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><path id=\"Vector_5\" d=\"M66 48C69.3333 54 69.3333 58 66 60C62.6667 58 62.6667 54 66 48Z\" fill=\"#56CCF2\" stroke=\"#1F2933\" stroke-width=\"2\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/></g></g></g></svg>","school":"<svg width=\"100%\" height=\"100%\" viewBox=\"0 0 96 96\" fill=\"none\" xmlns=\"http://www.w3.org/2000/svg\"><rect width=\"96\" height=\"96\" fill=\"#F5F5F5\"/><g id=\"Pictograms &#194;&#183; placeholder ARASAAC-style (96 px). Every Sinhala label: verify with SLT\"><rect x=\"-760.5\" y=\"-344.5\" width=\"1481\" height=\"721\" rx=\"23.5\" fill=\"white\"/><rect x=\"-760.5\" y=\"-344.5\" width=\"1481\" height=\"721\" rx=\"23.5\" stroke=\"#E1E4E8\"/><g id=\"items\"><g id=\"pict/school\"><path id=\"Vector\" d=\"M82 40H14V86H82V40Z\" fill=\"#F2C94C\" stroke=\"#1F2933\" stroke-width=\"3.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><path id=\"Vector_2\" d=\"M6 42L48 12L90 42H6Z\" fill=\"#F2994A\" stroke=\"#1F2933\" stroke-width=\"3.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><path id=\"Vector_3\" d=\"M56 60H40V86H56V60Z\" fill=\"white\" stroke=\"#1F2933\" stroke-width=\"3.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><path id=\"Vector_4\" d=\"M33 50H20V61H33V50Z\" fill=\"white\" stroke=\"#1F2933\" stroke-width=\"2.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><path id=\"Vector_5\" d=\"M76 50H63V61H76V50Z\" fill=\"white\" stroke=\"#1F2933\" stroke-width=\"2.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/></g></g></g></svg>","sleep":"<svg width=\"100%\" height=\"100%\" viewBox=\"0 0 96 96\" fill=\"none\" xmlns=\"http://www.w3.org/2000/svg\"><rect width=\"96\" height=\"96\" fill=\"#F5F5F5\"/><g id=\"Pictograms &#194;&#183; placeholder ARASAAC-style (96 px). Every Sinhala label: verify with SLT\"><rect x=\"-160.5\" y=\"-224.5\" width=\"1481\" height=\"721\" rx=\"23.5\" fill=\"white\"/><rect x=\"-160.5\" y=\"-224.5\" width=\"1481\" height=\"721\" rx=\"23.5\" stroke=\"#E1E4E8\"/><g id=\"items\"><g id=\"pict/sleep\"><path id=\"Vector\" d=\"M8 82V36M8 64H88V82\" stroke=\"#1F2933\" stroke-width=\"3.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><path id=\"Vector_2\" d=\"M29 46H21C17.134 46 14 49.134 14 53C14 56.866 17.134 60 21 60H29C32.866 60 36 56.866 36 53C36 49.134 32.866 46 29 46Z\" fill=\"white\" stroke=\"#1F2933\" stroke-width=\"3.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><path id=\"Vector_3\" d=\"M38 48H86V64H38V48Z\" fill=\"#56CCF2\" stroke=\"#1F2933\" stroke-width=\"3.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><path id=\"Vector_4\" d=\"M60 10H76L60 28H76\" stroke=\"#1F2933\" stroke-width=\"4\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/></g></g></g></svg>","speak":"<svg width=\"100%\" height=\"100%\" viewBox=\"0 0 96 96\" fill=\"none\" xmlns=\"http://www.w3.org/2000/svg\"><rect width=\"96\" height=\"96\" fill=\"#F5F5F5\"/><g id=\"Pictograms &#194;&#183; placeholder ARASAAC-style (96 px). Every Sinhala label: verify with SLT\"><rect x=\"-1000.5\" y=\"-464.5\" width=\"1481\" height=\"721\" rx=\"23.5\" fill=\"white\"/><rect x=\"-1000.5\" y=\"-464.5\" width=\"1481\" height=\"721\" rx=\"23.5\" stroke=\"#E1E4E8\"/><g id=\"items\"><g id=\"pict/speak\"><path id=\"Vector\" d=\"M12 36H30L52 16V80L30 60H12V36Z\" fill=\"white\" stroke=\"#1F2933\" stroke-width=\"3.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><path id=\"Vector_2\" d=\"M64 34C69.3333 43.3333 69.3333 52.6667 64 62M74 24C83.3333 40 83.3333 56 74 72\" stroke=\"#1F2933\" stroke-width=\"5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/></g></g></g></svg>","start":"<svg width=\"100%\" height=\"100%\" viewBox=\"0 0 96 96\" fill=\"none\" xmlns=\"http://www.w3.org/2000/svg\"><rect width=\"96\" height=\"96\" fill=\"#F5F5F5\"/><g id=\"Pictograms &#194;&#183; placeholder ARASAAC-style (96 px). Every Sinhala label: verify with SLT\"><rect x=\"-40.5\" y=\"-584.5\" width=\"1481\" height=\"721\" rx=\"23.5\" fill=\"white\"/><rect x=\"-40.5\" y=\"-584.5\" width=\"1481\" height=\"721\" rx=\"23.5\" stroke=\"#E1E4E8\"/><g id=\"items\"><g id=\"pict/start\"><path id=\"Vector\" d=\"M48 88C70.0914 88 88 70.0914 88 48C88 25.9086 70.0914 8 48 8C25.9086 8 8 25.9086 8 48C8 70.0914 25.9086 88 48 88Z\" fill=\"#6FCF97\" stroke=\"#1F2933\" stroke-width=\"3.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><path id=\"Vector_2\" d=\"M38 28L68 48L38 68V28Z\" fill=\"white\" stroke=\"#1F2933\" stroke-width=\"3.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/></g></g></g></svg>","stop":"<svg width=\"100%\" height=\"100%\" viewBox=\"0 0 96 96\" fill=\"none\" xmlns=\"http://www.w3.org/2000/svg\"><rect width=\"96\" height=\"96\" fill=\"#F5F5F5\"/><g id=\"Pictograms &#194;&#183; placeholder ARASAAC-style (96 px). Every Sinhala label: verify with SLT\"><rect x=\"-880.5\" y=\"-224.5\" width=\"1481\" height=\"721\" rx=\"23.5\" fill=\"white\"/><rect x=\"-880.5\" y=\"-224.5\" width=\"1481\" height=\"721\" rx=\"23.5\" stroke=\"#E1E4E8\"/><g id=\"items\"><g id=\"pict/stop\"><path id=\"Vector\" d=\"M39 28C39 24.6863 36.3137 22 33 22C29.6863 22 27 24.6863 27 28V56C27 59.3137 29.6863 62 33 62C36.3137 62 39 59.3137 39 56V28Z\" fill=\"#C98E62\" stroke=\"#1F2933\" stroke-width=\"3.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><path id=\"Vector_2\" d=\"M52 18C52 14.6863 49.3137 12 46 12C42.6863 12 40 14.6863 40 18V50C40 53.3137 42.6863 56 46 56C49.3137 56 52 53.3137 52 50V18Z\" fill=\"#C98E62\" stroke=\"#1F2933\" stroke-width=\"3.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><path id=\"Vector_3\" d=\"M65 20C65 16.6863 62.3137 14 59 14C55.6863 14 53 16.6863 53 20V52C53 55.3137 55.6863 58 59 58C62.3137 58 65 55.3137 65 52V20Z\" fill=\"#C98E62\" stroke=\"#1F2933\" stroke-width=\"3.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><path id=\"Vector_4\" d=\"M78 30C78 26.6863 75.3137 24 72 24C68.6863 24 66 26.6863 66 30V56C66 59.3137 68.6863 62 72 62C75.3137 62 78 59.3137 78 56V30Z\" fill=\"#C98E62\" stroke=\"#1F2933\" stroke-width=\"3.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><path id=\"Vector_5\" d=\"M62 44H42C32.0589 44 24 52.0589 24 62V70C24 79.9411 32.0589 88 42 88H62C71.9411 88 80 79.9411 80 70V62C80 52.0589 71.9411 44 62 44Z\" fill=\"#C98E62\" stroke=\"#1F2933\" stroke-width=\"3.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/></g></g></g></svg>","teacher":"<svg width=\"100%\" height=\"100%\" viewBox=\"0 0 96 96\" fill=\"none\" xmlns=\"http://www.w3.org/2000/svg\"><rect width=\"96\" height=\"96\" fill=\"#F5F5F5\"/><g id=\"Pictograms &#194;&#183; placeholder ARASAAC-style (96 px). Every Sinhala label: verify with SLT\"><rect x=\"-520.5\" y=\"-104.5\" width=\"1481\" height=\"721\" rx=\"23.5\" fill=\"white\"/><rect x=\"-520.5\" y=\"-104.5\" width=\"1481\" height=\"721\" rx=\"23.5\" stroke=\"#E1E4E8\"/><g id=\"items\"><g id=\"pict/teacher\"><g id=\"Vector\"><path d=\"M24 88V74C24 60.6667 32 54 48 54C64 54 72 60.6667 72 74V88\" fill=\"#8E7CC3\"/><path d=\"M24 88V74C24 60.6667 32 54 48 54C64 54 72 60.6667 72 74V88\" stroke=\"#1F2933\" stroke-width=\"3.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/></g><path id=\"Vector_2\" d=\"M31 50C29 26 34.6667 14 48 14C61.3333 14 67 26 65 50H31Z\" fill=\"#2B2B2B\" stroke=\"#1F2933\" stroke-width=\"3.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><path id=\"Vector_3\" d=\"M48 46C56.2843 46 63 39.2843 63 31C63 22.7157 56.2843 16 48 16C39.7157 16 33 22.7157 33 31C33 39.2843 39.7157 46 48 46Z\" fill=\"#C98E62\" stroke=\"#1F2933\" stroke-width=\"3.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><path id=\"Vector_4\" d=\"M34 27C36.6667 19.6667 41.3333 16 48 16C54.6667 16 59.3333 19.6667 62 27C55.3333 23 46 23 34 27Z\" fill=\"#2B2B2B\" stroke=\"#1F2933\" stroke-width=\"3.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><path id=\"Vector_5\" d=\"M43 35.2C44.215 35.2 45.2 34.215 45.2 33C45.2 31.785 44.215 30.8 43 30.8C41.785 30.8 40.8 31.785 40.8 33C40.8 34.215 41.785 35.2 43 35.2Z\" fill=\"#1F2933\"/><path id=\"Vector_6\" d=\"M53 35.2C54.215 35.2 55.2 34.215 55.2 33C55.2 31.785 54.215 30.8 53 30.8C51.785 30.8 50.8 31.785 50.8 33C50.8 34.215 51.785 35.2 53 35.2Z\" fill=\"#1F2933\"/><path id=\"Vector_7\" d=\"M43 40C46.3333 42 49.6667 42 53 40\" stroke=\"#1F2933\" stroke-width=\"2.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><path id=\"Vector_8\" d=\"M80 62H56C54.8954 62 54 62.8954 54 64V82C54 83.1046 54.8954 84 56 84H80C81.1046 84 82 83.1046 82 82V64C82 62.8954 81.1046 62 80 62Z\" fill=\"#F2C94C\" stroke=\"#1F2933\" stroke-width=\"3.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><path id=\"Vector_9\" d=\"M68 62V84\" stroke=\"#1F2933\" stroke-width=\"2.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/></g></g></g></svg>","thaththa":"<svg width=\"100%\" height=\"100%\" viewBox=\"0 0 96 96\" fill=\"none\" xmlns=\"http://www.w3.org/2000/svg\"><rect width=\"96\" height=\"96\" fill=\"#F5F5F5\"/><g id=\"Pictograms &#194;&#183; placeholder ARASAAC-style (96 px). Every Sinhala label: verify with SLT\"><rect x=\"-280.5\" y=\"-104.5\" width=\"1481\" height=\"721\" rx=\"23.5\" fill=\"white\"/><rect x=\"-280.5\" y=\"-104.5\" width=\"1481\" height=\"721\" rx=\"23.5\" stroke=\"#E1E4E8\"/><g id=\"items\"><g id=\"pict/thaththa\"><g id=\"Vector\"><path d=\"M24 88V74C24 60.6667 32 54 48 54C64 54 72 60.6667 72 74V88\" fill=\"#6FA8DC\"/><path d=\"M24 88V74C24 60.6667 32 54 48 54C64 54 72 60.6667 72 74V88\" stroke=\"#1F2933\" stroke-width=\"3.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/></g><path id=\"Vector_2\" d=\"M48 46C56.2843 46 63 39.2843 63 31C63 22.7157 56.2843 16 48 16C39.7157 16 33 22.7157 33 31C33 39.2843 39.7157 46 48 46Z\" fill=\"#C98E62\" stroke=\"#1F2933\" stroke-width=\"3.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><path id=\"Vector_3\" d=\"M33 30C33 20 38 15 48 15C58 15 63 20 63 30C58.3333 24.6667 53.3333 22.3333 48 23C42.6667 22.3333 37.6667 24.6667 33 30Z\" fill=\"#2B2B2B\" stroke=\"#1F2933\" stroke-width=\"3.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><path id=\"Vector_4\" d=\"M43 35.2C44.215 35.2 45.2 34.215 45.2 33C45.2 31.785 44.215 30.8 43 30.8C41.785 30.8 40.8 31.785 40.8 33C40.8 34.215 41.785 35.2 43 35.2Z\" fill=\"#1F2933\"/><path id=\"Vector_5\" d=\"M53 35.2C54.215 35.2 55.2 34.215 55.2 33C55.2 31.785 54.215 30.8 53 30.8C51.785 30.8 50.8 31.785 50.8 33C50.8 34.215 51.785 35.2 53 35.2Z\" fill=\"#1F2933\"/><path id=\"Vector_6\" d=\"M43 40C46.3333 42 49.6667 42 53 40\" stroke=\"#1F2933\" stroke-width=\"2.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><path id=\"Vector_7\" d=\"M40 41C45.3333 45 50.6667 45 56 41\" stroke=\"#1F2933\" stroke-width=\"3\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/></g></g></g></svg>","toilet":"<svg width=\"100%\" height=\"100%\" viewBox=\"0 0 96 96\" fill=\"none\" xmlns=\"http://www.w3.org/2000/svg\"><rect width=\"96\" height=\"96\" fill=\"#F5F5F5\"/><g id=\"Pictograms &#194;&#183; placeholder ARASAAC-style (96 px). Every Sinhala label: verify with SLT\"><rect x=\"-1000.5\" y=\"-344.5\" width=\"1481\" height=\"721\" rx=\"23.5\" fill=\"white\"/><rect x=\"-1000.5\" y=\"-344.5\" width=\"1481\" height=\"721\" rx=\"23.5\" stroke=\"#E1E4E8\"/><g id=\"items\"><g id=\"pict/toilet\"><path id=\"Vector\" d=\"M44 10H24C21.7909 10 20 11.7909 20 14V40C20 42.2091 21.7909 44 24 44H44C46.2091 44 48 42.2091 48 40V14C48 11.7909 46.2091 10 44 10Z\" fill=\"white\" stroke=\"#1F2933\" stroke-width=\"3.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><path id=\"Vector_2\" d=\"M16 44H80C80 58.6667 72.6667 67.3333 58 70L62 86H32L36 70C22.6667 66 16 57.3333 16 44Z\" fill=\"white\" stroke=\"#1F2933\" stroke-width=\"3.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/></g></g></g></svg>","undo":"<svg width=\"100%\" height=\"100%\" viewBox=\"0 0 96 96\" fill=\"none\" xmlns=\"http://www.w3.org/2000/svg\"><rect width=\"96\" height=\"96\" fill=\"#F5F5F5\"/><g id=\"Pictograms &#194;&#183; placeholder ARASAAC-style (96 px). Every Sinhala label: verify with SLT\"><rect x=\"-1120.5\" y=\"-464.5\" width=\"1481\" height=\"721\" rx=\"23.5\" fill=\"white\"/><rect x=\"-1120.5\" y=\"-464.5\" width=\"1481\" height=\"721\" rx=\"23.5\" stroke=\"#E1E4E8\"/><g id=\"items\"><g id=\"pict/undo\"><path id=\"Vector\" d=\"M34 56L14 36L34 16\" stroke=\"#1F2933\" stroke-width=\"7\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><path id=\"Vector_2\" d=\"M14 36H58C74 36 82 44 82 60C82 76 74 84 58 84H36\" stroke=\"#1F2933\" stroke-width=\"7\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/></g></g></g></svg>","want":"<svg width=\"100%\" height=\"100%\" viewBox=\"0 0 96 96\" fill=\"none\" xmlns=\"http://www.w3.org/2000/svg\"><rect width=\"96\" height=\"96\" fill=\"#F5F5F5\"/><g id=\"Pictograms &#194;&#183; placeholder ARASAAC-style (96 px). Every Sinhala label: verify with SLT\"><rect x=\"-760.5\" y=\"-104.5\" width=\"1481\" height=\"721\" rx=\"23.5\" fill=\"white\"/><rect x=\"-760.5\" y=\"-104.5\" width=\"1481\" height=\"721\" rx=\"23.5\" stroke=\"#E1E4E8\"/><g id=\"items\"><g id=\"pict/want\"><path id=\"Vector\" d=\"M12 50C16 71.3333 28 82 48 82C68 82 80 71.3333 84 50C74.6667 56.6667 62.6667 60 48 60C33.3333 60 21.3333 56.6667 12 50Z\" fill=\"#C98E62\" stroke=\"#1F2933\" stroke-width=\"3.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><path id=\"Vector_2\" d=\"M48 10V42M35 30L48 43L61 30\" stroke=\"#1F2933\" stroke-width=\"5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/></g></g></g></svg>","water":"<svg width=\"100%\" height=\"100%\" viewBox=\"0 0 96 96\" fill=\"none\" xmlns=\"http://www.w3.org/2000/svg\"><rect width=\"96\" height=\"96\" fill=\"#F5F5F5\"/><g id=\"Pictograms &#194;&#183; placeholder ARASAAC-style (96 px). Every Sinhala label: verify with SLT\"><rect x=\"-40.5\" y=\"-344.5\" width=\"1481\" height=\"721\" rx=\"23.5\" fill=\"white\"/><rect x=\"-40.5\" y=\"-344.5\" width=\"1481\" height=\"721\" rx=\"23.5\" stroke=\"#E1E4E8\"/><g id=\"items\"><g id=\"pict/water\"><path id=\"Vector\" d=\"M24 14H72L66 86H30L24 14Z\" fill=\"white\" stroke=\"#1F2933\" stroke-width=\"3.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><path id=\"Vector_2\" d=\"M26 40H70L66 86H30L26 40Z\" fill=\"#56CCF2\" stroke=\"#1F2933\" stroke-width=\"3.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/></g></g></g></svg>","yes":"<svg width=\"100%\" height=\"100%\" viewBox=\"0 0 96 96\" fill=\"none\" xmlns=\"http://www.w3.org/2000/svg\"><rect width=\"96\" height=\"96\" fill=\"#F5F5F5\"/><g id=\"Pictograms &#194;&#183; placeholder ARASAAC-style (96 px). Every Sinhala label: verify with SLT\"><rect x=\"-1120.5\" y=\"-224.5\" width=\"1481\" height=\"721\" rx=\"23.5\" fill=\"white\"/><rect x=\"-1120.5\" y=\"-224.5\" width=\"1481\" height=\"721\" rx=\"23.5\" stroke=\"#E1E4E8\"/><g id=\"items\"><g id=\"pict/yes\"><path id=\"Vector\" d=\"M48 84C67.8823 84 84 67.8823 84 48C84 28.1177 67.8823 12 48 12C28.1177 12 12 28.1177 12 48C12 67.8823 28.1177 84 48 84Z\" fill=\"#6FCF97\" stroke=\"#1F2933\" stroke-width=\"3.5\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/><path id=\"Vector_2\" d=\"M30 49L43 62L67 36\" stroke=\"#1F2933\" stroke-width=\"7\" stroke-linecap=\"round\" stroke-linejoin=\"round\"/></g></g></g></svg>"};
+
+    function getPic(name) {
+      if (pictograms[name]) {
+        return pictograms[name];
+      }
+      return '<div class="w-full h-full flex items-center justify-center font-bold text-xs bg-slate-200 text-slate-600 rounded">🔲</div>';
+    }
+
+    // --- 2. VOCABULARY & SINHALA PHONETICS DEFINITION ---
+    // Every symbol includes its Sinhala Unicode script, English subtitle, and accurate phonetic sound for Speech Synthesis
+    const STARTER_GRID = [
+      { id: 'me',       pictogram: 'me',       label: 'මට',       en: 'to me',     phonetic: 'Mata',      wordClass: 'people' },
+      { id: 'want',     pictogram: 'want',     label: 'ඕනේ',     en: 'want',      phonetic: 'Oh-nay',    wordClass: 'core' },
+      { id: 'happy',    pictogram: 'happy',    label: 'සතුටුයි',  en: 'happy',     phonetic: 'Sathutuyi', wordClass: 'describing' },
+      { id: 'water',    pictogram: 'water',    label: 'වතුර',     en: 'water',     phonetic: 'Wathura',   wordClass: 'thing' },
+      
+      { id: 'amma',     pictogram: 'amma',     label: 'අම්මා',    en: 'mother',    phonetic: 'Amma',      wordClass: 'people' },
+      { id: 'eat',      pictogram: 'eat',      label: 'කන්න',     en: 'eat',       phonetic: 'Kanna',     wordClass: 'action' },
+      { id: 'sad',      pictogram: 'sad',      label: 'දුකයි',    en: 'sad',       phonetic: 'Dukayi',    wordClass: 'describing' },
+      { id: 'milk',     pictogram: 'milk',     label: 'කිරි',     en: 'milk',      phonetic: 'Kiri',      wordClass: 'thing' },
+
+      { id: 'hidden-1', pictogram: 'me',       label: '',         en: '',          phonetic: '',          wordClass: 'thing', state: 'hidden' },
+      { id: 'drink',    pictogram: 'drink',    label: 'බොන්න',    en: 'drink',     phonetic: 'Bonna',     wordClass: 'action' },
+      { id: 'hidden-3', pictogram: 'me',       label: '',         en: '',          phonetic: '',          wordClass: 'thing', state: 'hidden' },
+      { id: 'kiribath', pictogram: 'kiribath', label: 'කිරිබත්',  en: 'milk rice', phonetic: 'Kiribath',  wordClass: 'thing' },
+    ];
+
+    const CORE_KEYS = [
+      { id: 'home',  label: 'ගෙදර',      en: 'Home',     phonetic: 'Gedara',          pictogram: 'home',     kind: 'nav' },
+      { id: 'quick', label: 'ඉක්මන්',    en: 'Quick',    phonetic: 'Ikman',           pictogram: 'quick',    kind: 'nav' },
+      { id: 'help',  label: 'උදව්',      en: 'Help',     phonetic: 'Udaw',            pictogram: 'help',     kind: 'core' },
+      { id: 'more',  label: 'තව',        en: 'More',     phonetic: 'Thawa',           pictogram: 'more',     kind: 'core' },
+      { id: 'stop',  label: 'නවත්තන්න',  en: 'Stop',     phonetic: 'Nawath-thanna',   pictogram: 'stop',     kind: 'core' },
+      { id: 'yes',   label: 'ඔව්',       en: 'Yes',      phonetic: 'Ow',              pictogram: 'yes',      kind: 'core' },
+      { id: 'no',    label: 'නෑ',        en: 'No',       phonetic: 'Naeh',            pictogram: 'no',       kind: 'core' },
+      { id: 'break', label: 'විවේකය',    en: 'Break',    phonetic: 'Wiwaykaya',       pictogram: 'finished', kind: 'nav' },
+    ];
+
+    // --- 3. APPLICATION STATE ---
+    let appState = {
+      device: 'phone', // default 'phone' view
+      theme: 'light',
+      screen: 'board', // 'board' | 'facilitator' | 'charts' | 'tokens'
+      audioEnabled: true,
+      message: [],
+      isSpeaking: false,
+      showAdultChip: false,
+      pinInput: '',
+      activeRole: 'parent',
+      lastSpokenText: '',
+    };
+
+    const THEMES = {
+      light: {
+        bg: '#FAF7F2',
+        surface: '#FFFFFF',
+        ink: '#1F2933',
+        inkMuted: '#52606D',
+        border: '#D9D4CC',
+        selected: '#2563EB',
+        selectedSoft: '#EEF3FE',
+        placeholder: '#F1EDE6',
+      },
+      dark: {
+        bg: '#15191E',
+        surface: '#222831',
+        ink: '#F3F4F6',
+        inkMuted: '#AAB4BE',
+        border: '#3B4450',
+        selected: '#60A5FA',
+        selectedSoft: '#1E2A44',
+        placeholder: '#1E242B',
+      }
+    };
+
+    let audioCtx = null;
+    function playTapSound(freq = 520, duration = 0.06) {
+      if (!appState.audioEnabled) return;
+      try {
+        if (!audioCtx) audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+        if (audioCtx.state === 'suspended') audioCtx.resume();
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+        gain.gain.setValueAtTime(0.12, audioCtx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + duration);
+        osc.connect(gain);
+        gain.connect(audioCtx.destination);
+        osc.start();
+        osc.stop(audioCtx.currentTime + duration);
+      } catch (e) {}
+    }
+
+    // Ensure voices are loaded in modern browsers
+    if ('speechSynthesis' in window) {
+      window.speechSynthesis.onvoiceschanged = () => {
+        window.speechSynthesis.getVoices();
+      };
+    }
+
+    // --- 4. SINHALA SPEECH SYNTHESIS ENGINE ---
+    // Speaks the text accurately in Sinhala using native Sinhala voice or phonetic Indic synthesis
+    function speakSinhala(sinhalaText, phoneticText, updateUiSpeaking = true) {
+      if (!appState.audioEnabled) return;
+
+      playTapSound(640, 0.08);
+
+      if (updateUiSpeaking) {
+        appState.isSpeaking = true;
+        appState.lastSpokenText = sinhalaText;
+        renderCurrentScreen();
+      }
+
+      if ('speechSynthesis' in window) {
+        window.speechSynthesis.cancel();
+
+        const voices = window.speechSynthesis.getVoices();
+        
+        // 1. Try finding genuine native Sinhala voice (e.g. Edge Microsoft Thilini / Prasad / si-LK)
+        const sinhalaVoice = voices.find(v => 
+          (v.lang && (v.lang.toLowerCase().startsWith('si') || v.lang === 'si-LK')) ||
+          (v.name && (v.name.toLowerCase().includes('sinhala') || v.name.toLowerCase().includes('thilini') || v.name.toLowerCase().includes('prasad')))
+        );
+
+        // 2. Try finding Indian English or Indic voice as closest natural South Asian accent
+        const indicVoice = voices.find(v => 
+          v.lang === 'en-IN' || v.lang === 'hi-IN' || (v.name && v.name.toLowerCase().includes('india'))
+        );
+
+        let utterText = sinhalaText;
+        let selectedVoice = null;
+
+        if (sinhalaVoice) {
+          // Native Sinhala voice available
+          utterText = sinhalaText;
+          selectedVoice = sinhalaVoice;
+        } else {
+          // Fallback for Windows default installs lacking si-LK voice:
+          // Uses phonetic Sinhala so the synthesizer articulates genuine Sinhala words instead of silence!
+          utterText = phoneticText || sinhalaText;
+          selectedVoice = indicVoice || null;
+        }
+
+        const utter = new SpeechSynthesisUtterance(utterText);
+        if (selectedVoice) {
+          utter.voice = selectedVoice;
+          utter.lang = selectedVoice.lang;
+        } else {
+          utter.lang = sinhalaVoice ? 'si-LK' : 'en-US';
+        }
+
+        utter.rate = 0.85; // Slightly slower, clear enunciation for child AAC
+        utter.pitch = 1.05; // Friendly child-like pitch
+
+        utter.onend = () => {
+          if (updateUiSpeaking) {
+            appState.isSpeaking = false;
+            appState.showAdultChip = true;
+            renderCurrentScreen();
+            setTimeout(() => {
+              if (appState.showAdultChip) {
+                appState.showAdultChip = false;
+                renderCurrentScreen();
+              }
+            }, 6000);
+          }
+        };
+
+        utter.onerror = () => {
+          if (updateUiSpeaking) {
+            appState.isSpeaking = false;
+            appState.showAdultChip = true;
+            renderCurrentScreen();
+          }
+        };
+
+        window.speechSynthesis.speak(utter);
+      } else {
+        if (updateUiSpeaking) {
+          setTimeout(() => {
+            appState.isSpeaking = false;
+            appState.showAdultChip = true;
+            renderCurrentScreen();
+          }, 1200);
+        }
+      }
+    }
+
+    // --- 5. AAC COMPOSER ACTIONS ---
+
+    function addSymbolToMessage(cell) {
+      if (cell.state === 'hidden') return;
+
+      // Add to message bar
+      appState.message.push({
+        id: cell.id + '-' + Date.now(),
+        label: cell.label,
+        en: cell.en,
+        phonetic: cell.phonetic,
+        pictogram: cell.pictogram,
+        wordClass: cell.wordClass,
+      });
+
+      renderCurrentScreen();
+      showToast('Added: ' + cell.label + ' (' + cell.en + ')', '➕');
+
+      // Immediate auditory feedback: Speak the tapped word in Sinhala!
+      speakSinhala(cell.label, cell.phonetic, false);
+    }
+
+    function removeLastSymbol() {
+      if (appState.message.length === 0) return;
+      playTapSound(320, 0.08);
+      appState.message.pop();
+      renderCurrentScreen();
+      showToast('Undid last symbol', '↩️');
+    }
+
+    function clearCurrentMessage() {
+      if (appState.message.length === 0) return;
+      playTapSound(260, 0.12);
+      appState.message = [];
+      appState.showAdultChip = false;
+      renderCurrentScreen();
+      showToast('Message bar cleared', '🗑️');
+    }
+
+    function speakCurrentMessage() {
+      if (appState.message.length === 0) {
+        showToast('Message bar is empty. Tap symbols below to build a phrase.', '⚠️');
+        return;
+      }
+
+      const sinhalaSentence = appState.message.map(s => s.label).join(' ');
+      const phoneticSentence = appState.message.map(s => s.phonetic || s.label).join(' ');
+      
+      showToast('🗣️ Playing Sinhala: ' + sinhalaSentence + ' (' + phoneticSentence + ')', '🔊');
+      speakSinhala(sinhalaSentence, phoneticSentence, true);
+    }
+
+    function recordAdultObservation(outcome) {
+      playTapSound(600, 0.08);
+      appState.showAdultChip = false;
+      renderCurrentScreen();
+      showToast('Recorded observation: ' + outcome, '✅');
+    }
+
+    // --- 6. RENDERERS FOR SCREENS ---
+
+    // [A] Screen: Child AAC Board
+    function renderBoardScreen(isTablet) {
+      const curTheme = THEMES[appState.theme];
+      const sentenceText = appState.message.length > 0
+        ? appState.message.map(s => s.label).join(' ')
+        : ' ';
+      const phoneticSentenceText = appState.message.length > 0
+        ? appState.message.map(s => s.phonetic).join(' ')
+        : '';
+
+      // ─────────────────────────────────────────────────────────────
+      // [1] MOBILE PHONE ADAPTED CHILD VIEW (Portrait, 390px)
+      // ─────────────────────────────────────────────────────────────
+      if (!isTablet) {
+        return `
+          <div class="w-full h-full p-2.5 flex flex-col justify-between overflow-y-auto" style="background-color: ${curTheme.bg}; color: ${curTheme.ink}">
+            
+            <!-- TOP MESSAGE BAR (TEXT BOX) -->
+            <div class="w-full rounded-2xl p-2 border-2 transition-all flex flex-col gap-1.5 shadow-2xs"
+                 style="background-color: ${curTheme.surface}; border-color: ${appState.isSpeaking ? '#2563EB' : curTheme.border}; ${appState.isSpeaking ? 'box-shadow: 0 0 0 2px rgba(37,99,235,0.25);' : ''}">
+              
+              <!-- Chips Row & Sentence Display -->
+              <div class="flex items-center justify-between gap-2 min-h-[46px]">
+                <!-- Chips container -->
+                <div class="flex items-center gap-1.5 overflow-x-auto py-0.5 flex-1 min-h-[42px] no-scrollbar">
+                  ${appState.message.length === 0 ? `
+                    <span class="text-[11px] font-medium italic opacity-40 ml-1">Tap pictograms below to build phrase...</span>
+                  ` : appState.message.map((sym, idx) => `
+                    <button onclick="speakSinhala('${sym.label}', '${sym.phonetic}', false); showToast('Played: ${sym.label}', '🔊');"
+                            class="flex items-center gap-1.5 px-2 py-1 rounded-xl border bg-white shadow-2xs shrink-0 animate-fade-in cell-press"
+                            style="border-color: ${curTheme.border}"
+                            title="Click to play this word in Sinhala">
+                      <div class="w-6 h-6 shrink-0">
+                        ${getPic(sym.pictogram)}
+                      </div>
+                      <div class="flex flex-col text-left">
+                        <span class="text-xs font-bold sinhala-text leading-none text-slate-900">${sym.label}</span>
+                        <span class="text-[8px] text-slate-400 font-medium leading-none">${sym.en}</span>
+                      </div>
+                    </button>
+                  `).join('')}
+                </div>
+
+                <!-- Sinhala Spoken Sentence -->
+                <div class="px-2 shrink-0 flex flex-col items-end justify-center text-right">
+                  <span class="sinhala-text text-base font-bold tracking-tight ${appState.isSpeaking ? 'text-blue-600' : ''}">
+                    ${sentenceText}
+                  </span>
+                  ${phoneticSentenceText ? `
+                    <span class="text-[9px] text-blue-600/80 font-semibold tracking-tight">
+                      ${phoneticSentenceText}
+                    </span>
+                  ` : ''}
+                </div>
+              </div>
+
+              <!-- Animated Waveform when speaking in Sinhala -->
+              ${appState.isSpeaking ? `
+                <div class="flex items-center justify-between px-1 pt-0.5 border-t border-blue-100">
+                  <span class="text-[10px] text-blue-600 font-bold flex items-center gap-1">
+                    🗣️ Playing in Sinhala: "${sentenceText}"
+                  </span>
+                  <div class="flex items-center gap-1">
+                    <div class="w-1 bg-blue-600 rounded-full wave-bar" style="animation-delay: 0.1s"></div>
+                    <div class="w-1 bg-blue-600 rounded-full wave-bar" style="animation-delay: 0.25s"></div>
+                    <div class="w-1 bg-blue-600 rounded-full wave-bar" style="animation-delay: 0.4s"></div>
+                    <div class="w-1 bg-blue-600 rounded-full wave-bar" style="animation-delay: 0.15s"></div>
+                  </div>
+                </div>
+              ` : ''}
+            </div>
+
+            <!-- COMPACT ACTION BUTTONS (Clear, Undo, Speak) -->
+            <div class="flex items-center gap-2 mt-2 shrink-0 w-full">
+              <!-- Clear Button -->
+              <button onclick="clearCurrentMessage()"
+                      class="px-3 py-2 rounded-xl border flex items-center justify-center gap-1.5 cell-press shadow-2xs"
+                      style="background-color: ${curTheme.surface}; border-color: ${curTheme.border}"
+                      title="Clear message">
+                <div class="w-5 h-5">
+                  ${getPic('clear')}
+                </div>
+                <span class="text-xs font-semibold text-slate-600">Clear</span>
+              </button>
+
+              <!-- Undo Button -->
+              <button onclick="removeLastSymbol()"
+                      class="px-3 py-2 rounded-xl border flex items-center justify-center gap-1.5 cell-press shadow-2xs"
+                      style="background-color: ${curTheme.surface}; border-color: ${curTheme.border}"
+                      title="Undo last symbol">
+                <div class="w-5 h-5">
+                  ${getPic('undo')}
+                </div>
+                <span class="text-xs font-semibold text-slate-600">Undo</span>
+              </button>
+
+              <!-- Speak Button (Plays in Sinhala!) -->
+              <button onclick="speakCurrentMessage()"
+                      class="flex-1 py-2 px-3 rounded-xl border-2 flex items-center justify-center gap-2 cell-press shadow-xs hover:opacity-95"
+                      style="background-color: #EEF3FE; border-color: #2563EB"
+                      title="Play message aloud in Sinhala">
+                <div class="w-6 h-6">
+                  ${getPic('speak')}
+                </div>
+                <span class="text-xs font-bold sinhala-text text-blue-700">කියන්න (Speak in Sinhala)</span>
+              </button>
+            </div>
+
+            <!-- ADULT OBSERVATION CHIP -->
+            ${appState.showAdultChip ? `
+              <div class="my-1.5 py-1 px-3 rounded-xl bg-amber-50 border border-amber-200 text-amber-900 flex items-center justify-between shadow-2xs animate-fade-in shrink-0">
+                <div class="flex items-center gap-1.5">
+                  <span class="text-xs">💬</span>
+                  <span class="text-[11px] font-bold">Meant this?</span>
+                </div>
+                <div class="flex items-center gap-1.5">
+                  <button onclick="recordAdultObservation('Meant')" class="px-2 py-0.5 rounded-md text-[10px] font-bold bg-emerald-600 text-white">Meant</button>
+                  <button onclick="recordAdultObservation('Not meant')" class="px-2 py-0.5 rounded-md text-[10px] font-bold bg-rose-600 text-white">Not meant</button>
+                  <button onclick="recordAdultObservation('Unsure')" class="px-2 py-0.5 rounded-md text-[10px] font-bold bg-slate-600 text-white">Unsure</button>
+                </div>
+              </div>
+            ` : '<div class="h-1"></div>'}
+
+            <!-- CORE KEYS ROW -->
+            <div class="w-full flex items-center gap-1.5 overflow-x-auto py-1 shrink-0 no-scrollbar">
+              ${CORE_KEYS.map(k => `
+                <button onclick="addSymbolToMessage(${JSON.stringify({ id: k.id, label: k.label, en: k.en, phonetic: k.phonetic, pictogram: k.pictogram, wordClass: 'core' })})"
+                        class="w-[58px] h-[52px] rounded-xl p-1 flex flex-col items-center justify-center border cell-press shrink-0 shadow-2xs hover:bg-slate-50"
+                        style="background-color: ${curTheme.surface}; border-color: ${curTheme.border}"
+                        title="Add '${k.label}' to phrase">
+                  <div class="w-5 h-5 mb-0.5">
+                    ${getPic(k.pictogram)}
+                  </div>
+                  <span class="text-[11px] font-bold sinhala-text leading-tight text-slate-800">${k.label}</span>
+                </button>
+              `).join('')}
+            </div>
+
+            <!-- 3×4 STARTER SYMBOL GRID (Mobile Sized Cards) -->
+            <div class="grid grid-cols-4 grid-rows-3 gap-2 flex-1 w-full my-1 overflow-hidden">
+              ${STARTER_GRID.map(cell => {
+                if (cell.state === 'hidden') {
+                  return `
+                    <div class="rounded-xl border-2 border-dashed flex items-center justify-center opacity-25 select-none"
+                         style="border-color: ${curTheme.border}; background-color: ${curTheme.placeholder}">
+                      <span class="text-[9px] font-bold text-slate-400">LOCKED</span>
+                    </div>
+                  `;
+                }
+
+                let classBorder = 'border-slate-300';
+                let classBadge = 'bg-slate-100 text-slate-700';
+                if (cell.wordClass === 'people') { classBorder = 'border-amber-400'; classBadge = 'bg-amber-100 text-amber-800'; }
+                if (cell.wordClass === 'core') { classBorder = 'border-purple-400'; classBadge = 'bg-purple-100 text-purple-800'; }
+                if (cell.wordClass === 'describing') { classBorder = 'border-sky-400'; classBadge = 'bg-sky-100 text-sky-800'; }
+                if (cell.wordClass === 'thing') { classBorder = 'border-orange-400'; classBadge = 'bg-orange-100 text-orange-800'; }
+                if (cell.wordClass === 'action') { classBorder = 'border-emerald-400'; classBadge = 'bg-emerald-100 text-emerald-800'; }
+
+                return `
+                  <button onclick='addSymbolToMessage(${JSON.stringify(cell)})'
+                          class="rounded-xl p-1.5 flex flex-col items-center justify-between border-2 ${classBorder} cell-press transition-all shadow-2xs relative overflow-hidden group hover:shadow-xs"
+                          style="background-color: ${curTheme.surface}"
+                          title="Click to add '${cell.label}' (${cell.en}) to message bar">
+                    <div class="w-full flex items-center justify-between">
+                      <span class="text-[7px] font-bold uppercase tracking-wider ${classBadge} px-1 rounded">${cell.wordClass.slice(0,4)}</span>
+                      <span class="text-[8px] text-slate-400 font-medium">${cell.en}</span>
+                    </div>
+                    <div class="w-8 h-8 my-auto shrink-0 group-hover:scale-105 transition-transform">
+                      ${getPic(cell.pictogram)}
+                    </div>
+                    <div class="w-full text-center">
+                      <span class="text-xs font-bold sinhala-text text-slate-900 leading-tight">${cell.label}</span>
+                    </div>
+                  </button>
+                `;
+              }).join('')}
+            </div>
+
+          </div>
+        `;
+      }
+
+      // ─────────────────────────────────────────────────────────────
+      // [2] FULL TABLET CHILD BOARD (10" Landscape View)
+      // ─────────────────────────────────────────────────────────────
+      return `
+        <div class="w-full h-full p-4 flex flex-col justify-between overflow-hidden" style="background-color: ${curTheme.bg}; color: ${curTheme.ink}">
+          
+          <!-- TOP ROW: MESSAGE BAR + ACTION BUTTONS -->
+          <div class="flex items-start gap-3 w-full shrink-0">
+            
+            <!-- MessageBar -->
+            <div class="flex-1 min-h-[92px] rounded-2xl p-2.5 flex items-center justify-between border-2 transition-all relative overflow-hidden"
+                 style="background-color: ${curTheme.surface}; border-color: ${appState.isSpeaking ? '#2563EB' : curTheme.border}; ${appState.isSpeaking ? 'box-shadow: 0 0 0 3px rgba(37,99,235,0.25);' : ''}">
+              
+              <!-- Left: Selected Symbol Chips -->
+              <div class="flex items-center gap-2 overflow-x-auto py-1 px-1 flex-1 min-h-[72px]">
+                ${appState.message.length === 0 ? `
+                  <span class="text-xs font-medium italic opacity-40 ml-2">Tap pictograms below to build a phrase...</span>
+                ` : appState.message.map((sym, idx) => `
+                  <button onclick="speakSinhala('${sym.label}', '${sym.phonetic}', false)"
+                          class="flex items-center gap-2 px-3 py-1.5 rounded-xl border bg-white shadow-xs shrink-0 animate-fade-in cell-press"
+                          style="border-color: ${curTheme.border}"
+                          title="Click to play this word in Sinhala">
+                    <div class="w-10 h-10 shrink-0">
+                      ${getPic(sym.pictogram)}
+                    </div>
+                    <div class="flex flex-col text-left">
+                      <span class="text-sm font-bold sinhala-text leading-tight text-slate-900">${sym.label}</span>
+                      <span class="text-[10px] text-slate-500 font-medium">${sym.en}</span>
+                    </div>
+                  </button>
+                `).join('')}
+              </div>
+
+              <!-- Vertical Divider -->
+              <div class="w-[2px] h-12 bg-slate-200 mx-3 shrink-0"></div>
+
+              <!-- Right: Sinhala Written Sentence & Phonetic Guide -->
+              <div class="px-3 shrink-0 flex flex-col items-end justify-center max-w-xs text-right">
+                <span class="sinhala-text text-2xl font-bold tracking-normal ${appState.isSpeaking ? 'text-blue-600' : ''}">
+                  ${sentenceText}
+                </span>
+                ${phoneticSentenceText ? `
+                  <span class="text-xs text-blue-600 font-semibold tracking-tight">
+                    ${phoneticSentenceText}
+                  </span>
+                ` : ''}
+              </div>
+
+              <!-- Speaking Audio Waveform -->
+              ${appState.isSpeaking ? `
+                <div class="absolute bottom-1 right-4 flex items-center gap-1">
+                  <div class="w-1 bg-blue-600 rounded-full wave-bar" style="animation-delay: 0.1s"></div>
+                  <div class="w-1 bg-blue-600 rounded-full wave-bar" style="animation-delay: 0.25s"></div>
+                  <div class="w-1 bg-blue-600 rounded-full wave-bar" style="animation-delay: 0.4s"></div>
+                  <div class="w-1 bg-blue-600 rounded-full wave-bar" style="animation-delay: 0.15s"></div>
+                </div>
+              ` : ''}
+            </div>
+
+            <!-- Action Buttons Row -->
+            <div class="flex items-center gap-2 shrink-0">
+              <button onclick="clearCurrentMessage()"
+                      class="w-[84px] h-[92px] rounded-2xl flex flex-col items-center justify-center gap-1 border-2 transition-all cell-press hover:opacity-90"
+                      style="background-color: ${curTheme.surface}; border-color: ${curTheme.border}"
+                      title="Clear message">
+                <div class="w-9 h-9">
+                  ${getPic('clear')}
+                </div>
+                <span class="text-[11px] font-semibold text-slate-500">Clear</span>
+              </button>
+
+              <button onclick="removeLastSymbol()"
+                      class="w-[84px] h-[92px] rounded-2xl flex flex-col items-center justify-center gap-1 border-2 transition-all cell-press hover:opacity-90"
+                      style="background-color: ${curTheme.surface}; border-color: ${curTheme.border}"
+                      title="Undo last symbol">
+                <div class="w-9 h-9">
+                  ${getPic('undo')}
+                </div>
+                <span class="text-[11px] font-semibold text-slate-500">Undo</span>
+              </button>
+
+              <button onclick="speakCurrentMessage()"
+                      class="w-[140px] h-[92px] rounded-2xl flex flex-col items-center justify-center gap-1 border-2 transition-all cell-press shadow-sm hover:opacity-95"
+                      style="background-color: #EEF3FE; border-color: #2563EB"
+                      title="Play message aloud in Sinhala">
+                <div class="w-9 h-9">
+                  ${getPic('speak')}
+                </div>
+                <span class="text-xs font-bold sinhala-text text-blue-700">කියන්න (Speak)</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- ADULT OBSERVATION CHIP -->
+          ${appState.showAdultChip ? `
+            <div class="my-1.5 py-1.5 px-4 rounded-xl bg-amber-50 border border-amber-200 text-amber-900 flex items-center justify-between shadow-sm animate-fade-in shrink-0">
+              <div class="flex items-center gap-2">
+                <span class="text-sm">💬</span>
+                <span class="text-xs font-semibold">Meant this message?</span>
+              </div>
+              <div class="flex items-center gap-2">
+                <button onclick="recordAdultObservation('Meant')" class="px-3 py-1 rounded-lg text-xs font-bold bg-emerald-600 text-white hover:bg-emerald-500">Meant</button>
+                <button onclick="recordAdultObservation('Not meant')" class="px-3 py-1 rounded-lg text-xs font-bold bg-rose-600 text-white hover:bg-rose-500">Not meant</button>
+                <button onclick="recordAdultObservation('Unsure')" class="px-3 py-1 rounded-lg text-xs font-bold bg-slate-600 text-white hover:bg-slate-500">Unsure</button>
+              </div>
+            </div>
+          ` : '<div class="h-2"></div>'}
+
+          <!-- MIDDLE ROW: CORE KEYS -->
+          <div class="grid grid-cols-8 gap-2.5 h-[76px] w-full shrink-0">
+            ${CORE_KEYS.map(k => `
+              <button onclick="addSymbolToMessage(${JSON.stringify({ id: k.id, label: k.label, en: k.en, phonetic: k.phonetic, pictogram: k.pictogram, wordClass: 'core' })})"
+                      class="rounded-xl p-1.5 flex flex-col items-center justify-center border-2 cell-press hover:opacity-90 shadow-2xs"
+                      style="background-color: ${curTheme.surface}; border-color: ${curTheme.border}">
+                <div class="w-7 h-7 mb-0.5">
+                  ${getPic(k.pictogram)}
+                </div>
+                <span class="text-xs font-bold sinhala-text leading-none">${k.label}</span>
+                <span class="text-[9px] text-slate-400 font-medium leading-none">${k.en}</span>
+              </button>
+            `).join('')}
+          </div>
+
+          <div class="h-2"></div>
+
+          <!-- BOTTOM: 3×4 STARTER SYMBOL GRID -->
+          <div class="grid grid-cols-4 grid-rows-3 gap-3 flex-1 w-full pb-1 overflow-hidden">
+            ${STARTER_GRID.map(cell => {
+              if (cell.state === 'hidden') {
+                return `
+                  <div class="rounded-2xl border-2 border-dashed flex items-center justify-center opacity-25 select-none"
+                       style="border-color: ${curTheme.border}; background-color: ${curTheme.placeholder}">
+                    <span class="text-xs font-bold text-slate-400 tracking-wider">LOCKED</span>
+                  </div>
+                `;
+              }
+
+              let classBorder = 'border-slate-300';
+              let classBadge = 'bg-slate-100 text-slate-700';
+              if (cell.wordClass === 'people') { classBorder = 'border-amber-400'; classBadge = 'bg-amber-100 text-amber-800'; }
+              if (cell.wordClass === 'core') { classBorder = 'border-purple-400'; classBadge = 'bg-purple-100 text-purple-800'; }
+              if (cell.wordClass === 'describing') { classBorder = 'border-sky-400'; classBadge = 'bg-sky-100 text-sky-800'; }
+              if (cell.wordClass === 'thing') { classBorder = 'border-orange-400'; classBadge = 'bg-orange-100 text-orange-800'; }
+              if (cell.wordClass === 'action') { classBorder = 'border-emerald-400'; classBadge = 'bg-emerald-100 text-emerald-800'; }
+
+              return `
+                <button onclick='addSymbolToMessage(${JSON.stringify(cell)})'
+                        class="rounded-2xl p-2.5 flex flex-col items-center justify-between border-[3px] ${classBorder} cell-press transition-all shadow-xs relative overflow-hidden group hover:shadow-md"
+                        style="background-color: ${curTheme.surface}"
+                        title="Add '${cell.label}' (${cell.en}) to message bar">
+                  <div class="w-full flex items-center justify-between px-1">
+                    <span class="text-[9px] font-bold uppercase tracking-wider ${classBadge} px-1.5 py-0.5 rounded-md">${cell.wordClass}</span>
+                    <span class="text-[10px] text-slate-400 font-semibold">${cell.en}</span>
+                  </div>
+                  <div class="w-14 h-14 my-auto shrink-0 group-hover:scale-105 transition-transform">
+                    ${getPic(cell.pictogram)}
+                  </div>
+                  <div class="w-full text-center">
+                    <span class="text-base font-extrabold sinhala-text text-slate-900">${cell.label}</span>
+                  </div>
+                </button>
+              `;
+            }).join('')}
+          </div>
+
+        </div>
+      `;
+    }
+
+    // [B] Screen: Facilitator Area & PIN Keypad
+    function renderFacilitatorScreen() {
+      const curTheme = THEMES[appState.theme];
+      return `
+        <div class="p-3.5 flex flex-col gap-3 overflow-y-auto h-full" style="background-color: ${curTheme.bg}; color: ${curTheme.ink}">
+          
+          <!-- App Bar -->
+          <div class="flex items-center justify-between pb-2.5 border-b" style="border-color: ${curTheme.border}">
+            <div>
+              <div class="flex items-center gap-1.5">
+                <h2 class="text-sm font-bold">Facilitator Dashboard</h2>
+                <span class="px-2 py-0.5 text-[9px] font-bold rounded-full bg-blue-100 text-blue-700">Role: ${appState.activeRole.toUpperCase()}</span>
+              </div>
+              <p class="text-[11px] text-slate-500">Learner: Demo Learner · Participant P-07</p>
+            </div>
+            <button onclick="changeScreen('board')" class="px-2.5 py-1 rounded-lg bg-blue-600 text-white font-medium text-[11px]">
+              Child Board ▶
+            </button>
+          </div>
+
+          <!-- Consent & Storage Banner -->
+          <div class="p-2.5 rounded-xl bg-blue-50/80 border border-blue-200 text-blue-900 text-[11px] flex items-start gap-2">
+            <span class="text-sm">🛡️</span>
+            <div>
+              <span class="font-bold">Offline Encrypted Storage (D-01/D-16):</span>
+              <p class="text-slate-600 text-[10px] mt-0.5">Encrypted locally with SQLCipher. Reports leave only as exported PDFs with guardian consent.</p>
+            </div>
+          </div>
+
+          <!-- Role Selector -->
+          <div class="flex items-center gap-1.5">
+            <span class="text-[11px] font-semibold text-slate-500">Role:</span>
+            <div class="flex items-center bg-slate-200/60 p-0.5 rounded-xl">
+              ${['parent', 'slp', 'educator', 'ot'].map(role => `
+                <button onclick="setRole('${role}')" class="px-2.5 py-1 rounded-lg text-[10px] font-bold transition-all ${appState.activeRole === role ? 'bg-white shadow-xs text-blue-700' : 'text-slate-600'}">
+                  ${role.toUpperCase()}
+                </button>
+              `).join('')}
+            </div>
+          </div>
+
+          <!-- 4-Digit PIN Security Keypad -->
+          <div class="p-3.5 rounded-2xl border flex flex-col items-center" style="background-color: ${curTheme.surface}; border-color: ${curTheme.border}">
+            <span class="text-xs font-bold text-slate-700 mb-0.5">Guardian 4-Digit Security PIN</span>
+            <p class="text-[10px] text-slate-400 mb-2.5">Demo PIN: 1234 (5 attempts lock for 60s)</p>
+
+            <!-- PIN Circles -->
+            <div class="flex items-center gap-3 mb-3">
+              ${[0, 1, 2, 3].map(i => `
+                <div class="w-3.5 h-3.5 rounded-full border-2 transition-all ${appState.pinInput.length > i ? 'bg-blue-600 border-blue-600 scale-110' : 'border-slate-300'}"></div>
+              `).join('')}
+            </div>
+
+            <!-- Keypad -->
+            <div class="grid grid-cols-3 gap-2 max-w-[240px] w-full">
+              ${[1,2,3,4,5,6,7,8,9].map(num => `
+                <button onclick="enterPin('${num}')" class="h-10 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-900 font-bold text-base cell-press flex items-center justify-center shadow-2xs">
+                  ${num}
+                </button>
+              `).join('')}
+              <button onclick="enterPin('clear')" class="h-10 rounded-xl bg-rose-50 text-rose-700 font-semibold text-xs flex items-center justify-center">
+                Clear
+              </button>
+              <button onclick="enterPin('0')" class="h-10 rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-900 font-bold text-base flex items-center justify-center shadow-2xs">
+                0
+              </button>
+              <button onclick="enterPin('back')" class="h-10 rounded-xl bg-slate-100 text-slate-700 font-semibold text-xs flex items-center justify-center">
+                ⌫
+              </button>
+            </div>
+          </div>
+
+          <!-- Session Observations Card -->
+          <div class="p-3 rounded-xl border flex items-center justify-between" style="background-color: ${curTheme.surface}; border-color: ${curTheme.border}">
+            <div class="flex items-center gap-2.5">
+              <div class="w-8 h-8 rounded-xl bg-amber-100 text-amber-800 flex items-center justify-center text-sm font-bold">
+                📝
+              </div>
+              <div>
+                <span class="text-xs font-bold block">Review Session Opportunities</span>
+                <span class="text-[10px] text-slate-500">6 messages recorded · 4 independent</span>
+              </div>
+            </div>
+            <button onclick="showToast('Opened session tagging dialog', '✅')" class="px-2.5 py-1 rounded-lg bg-slate-800 text-white text-[11px] font-semibold">
+              Review
+            </button>
+          </div>
+
+        </div>
+      `;
+    }
+
+    // [C] Screen: Charts & Analytics
+    function renderChartsScreen() {
+      const curTheme = THEMES[appState.theme];
+      return `
+        <div class="p-3.5 flex flex-col gap-3 overflow-y-auto h-full" style="background-color: ${curTheme.bg}; color: ${curTheme.ink}">
+          
+          <div class="flex items-center justify-between pb-2 border-b" style="border-color: ${curTheme.border}">
+            <div>
+              <h2 class="text-sm font-bold">Analytics & Session Trends</h2>
+              <p class="text-[10px] text-slate-500">Participant: P-07 · 20 Sessions Target</p>
+            </div>
+            <span class="px-2 py-0.5 text-[10px] font-bold bg-emerald-100 text-emerald-800 rounded-lg">5+ Threshold Met</span>
+          </div>
+
+          <!-- Metric Cards Row -->
+          <div class="grid grid-cols-3 gap-2">
+            <div class="p-2.5 rounded-xl border" style="background-color: ${curTheme.surface}; border-color: ${curTheme.border}">
+              <span class="text-[9px] text-slate-500 font-bold uppercase tracking-wider block">Messages</span>
+              <span class="text-lg font-extrabold text-blue-600">83</span>
+              <span class="text-[9px] text-emerald-600 font-semibold block mt-0.5">▲ +14%</span>
+            </div>
+            <div class="p-2.5 rounded-xl border" style="background-color: ${curTheme.surface}; border-color: ${curTheme.border}">
+              <span class="text-[9px] text-slate-500 font-bold uppercase tracking-wider block">Independent</span>
+              <span class="text-lg font-extrabold text-slate-900">72%</span>
+              <span class="text-[9px] text-slate-500 font-semibold block mt-0.5">Prompted: 28%</span>
+            </div>
+            <div class="p-2.5 rounded-xl border" style="background-color: ${curTheme.surface}; border-color: ${curTheme.border}">
+              <span class="text-[9px] text-slate-500 font-bold uppercase tracking-wider block">Breakdowns</span>
+              <span class="text-lg font-extrabold text-purple-600">4%</span>
+              <span class="text-[9px] text-slate-500 font-semibold block mt-0.5">Low rate</span>
+            </div>
+          </div>
+
+          <!-- SVG Bar Chart -->
+          <div class="p-3 rounded-2xl border" style="background-color: ${curTheme.surface}; border-color: ${curTheme.border}">
+            <div class="flex items-center justify-between mb-2">
+              <span class="text-xs font-bold">Daily Frequency (Mon → Sun)</span>
+              <span class="text-[10px] text-slate-400">Task T-026</span>
+            </div>
+            <div class="w-full h-28 flex items-end justify-between gap-2 pt-2 px-1 border-b border-slate-200">
+              ${[
+                { day: 'M', val: 9, h: '55%' },
+                { day: 'T', val: 12, h: '75%' },
+                { day: 'W', val: 8, h: '50%' },
+                { day: 'T', val: 14, h: '88%' },
+                { day: 'F', val: 11, h: '68%' },
+                { day: 'S', val: 16, h: '100%' },
+                { day: 'S', val: 13, h: '80%' }
+              ].map(bar => `
+                <div class="flex-1 flex flex-col items-center gap-1 h-full justify-end group">
+                  <div class="w-full rounded-t bg-blue-500 hover:bg-blue-600 transition-all cursor-pointer" style="height: ${bar.h}"></div>
+                  <span class="text-[10px] font-semibold text-slate-500">${bar.day}</span>
+                </div>
+              `).join('')}
+            </div>
+          </div>
+
+          <!-- SVG Line Chart -->
+          <div class="p-3 rounded-2xl border" style="background-color: ${curTheme.surface}; border-color: ${curTheme.border}">
+            <div class="flex items-center justify-between mb-1.5">
+              <span class="text-xs font-bold">Median Selection Time</span>
+              <span class="text-[10px] text-slate-400">Baseline = 0.19</span>
+            </div>
+            <div class="w-full h-24 relative flex items-center justify-center">
+              <svg class="w-full h-full" viewBox="0 0 300 80">
+                <line x1="10" y1="65" x2="290" y2="65" stroke="#CBD5E1" stroke-width="1"/>
+                <rect x="10" y="48" width="280" height="18" fill="rgba(37,99,235,0.06)"/>
+                <path d="M 20 58 Q 90 45, 150 35 T 280 18" fill="none" stroke="#2563EB" stroke-width="2.5" stroke-linecap="round"/>
+                <path d="M 20 62 Q 90 54, 150 42 T 280 28" fill="none" stroke="#F59E0B" stroke-width="2" stroke-dasharray="3,3" stroke-linecap="round"/>
+              </svg>
+            </div>
+            <div class="flex items-center justify-center gap-4 text-[9px] font-semibold mt-1">
+              <span class="flex items-center gap-1 text-blue-600"><span class="w-1.5 h-1.5 rounded-full bg-blue-600"></span> Condition A</span>
+              <span class="flex items-center gap-1 text-amber-600"><span class="w-1.5 h-1.5 rounded-full bg-amber-500"></span> Condition B</span>
+            </div>
+          </div>
+
+        </div>
+      `;
+    }
+
+    // [D] Screen: Tokens & Pictograms
+    function renderTokensScreen() {
+      const curTheme = THEMES[appState.theme];
+      const allPicKeys = Object.keys(pictograms);
+
+      return `
+        <div class="p-3.5 flex flex-col gap-3 overflow-y-auto h-full" style="background-color: ${curTheme.bg}; color: ${curTheme.ink}">
+          
+          <div class="flex items-center justify-between pb-1.5 border-b" style="border-color: ${curTheme.border}">
+            <div>
+              <h2 class="text-sm font-bold">Vocabulary Pictograms</h2>
+              <p class="text-[10px] text-slate-500">45 ARASAAC-style Placeholder SVGs</p>
+            </div>
+            <span class="text-[10px] font-bold text-slate-400">${allPicKeys.length} Icons</span>
+          </div>
+
+          <!-- Color Tokens Palette -->
+          <div class="p-2.5 rounded-xl border" style="background-color: ${curTheme.surface}; border-color: ${curTheme.border}">
+            <span class="text-[10px] font-bold block mb-1.5 text-slate-500">Colour Classification</span>
+            <div class="grid grid-cols-5 gap-1.5 text-center text-[8px] font-bold">
+              <div class="p-1 rounded-lg bg-[#F2C94C] text-slate-900">People</div>
+              <div class="p-1 rounded-lg bg-[#6FCF97] text-slate-900">Action</div>
+              <div class="p-1 rounded-lg bg-[#56CCF2] text-slate-900">Describing</div>
+              <div class="p-1 rounded-lg bg-[#F2994A] text-slate-900">Thing</div>
+              <div class="p-1 rounded-lg bg-[#BB6BD9] text-white">Core</div>
+            </div>
+          </div>
+
+          <!-- Pictograms Grid -->
+          <div class="grid grid-cols-4 gap-2">
+            ${allPicKeys.map(key => `
+              <div class="p-2 rounded-xl border flex flex-col items-center justify-between gap-1 shadow-2xs hover:shadow-xs transition-shadow"
+                   style="background-color: ${curTheme.surface}; border-color: ${curTheme.border}">
+                <div class="w-9 h-9 flex items-center justify-center">
+                  ${getPic(key)}
+                </div>
+                <span class="text-[10px] font-bold text-slate-700 truncate w-full text-center">${key}</span>
+              </div>
+            `).join('')}
+          </div>
+
+        </div>
+      `;
+    }
+
+    // --- 7. ROUTER & CONTROLLER ---
+
+    function renderCurrentScreen() {
+      const isTablet = appState.device === 'tablet';
+      const containerId = isTablet ? 'tablet-content' : 'phone-content';
+      const container = document.getElementById(containerId);
+      if (!container) return;
+
+      let html = '';
+      switch (appState.screen) {
+        case 'board':
+          html = renderBoardScreen(isTablet);
+          break;
+        case 'facilitator':
+          html = renderFacilitatorScreen();
+          break;
+        case 'charts':
+          html = renderChartsScreen();
+          break;
+        case 'tokens':
+          html = renderTokensScreen();
+          break;
+        default:
+          html = renderBoardScreen(isTablet);
+      }
+
+      container.innerHTML = html;
+    }
+
+    function setDeviceMode(mode) {
+      playTapSound(500, 0.05);
+      appState.device = mode;
+
+      const phoneWrapper = document.getElementById('phone-wrapper');
+      const tabletWrapper = document.getElementById('tablet-wrapper');
+      const btnPhone = document.getElementById('btn-phone');
+      const btnTablet = document.getElementById('btn-tablet');
+
+      if (mode === 'phone') {
+        phoneWrapper.classList.remove('hidden');
+        tabletWrapper.classList.add('hidden');
+        btnPhone.classList.add('bg-slate-700', 'text-white');
+        btnPhone.classList.remove('text-slate-400');
+        btnTablet.classList.remove('bg-slate-700', 'text-white');
+        btnTablet.classList.add('text-slate-400');
+      } else {
+        tabletWrapper.classList.remove('hidden');
+        phoneWrapper.classList.add('hidden');
+        btnTablet.classList.add('bg-slate-700', 'text-white');
+        btnTablet.classList.remove('text-slate-400');
+        btnPhone.classList.remove('bg-slate-700', 'text-white');
+        btnPhone.classList.add('text-slate-400');
+      }
+
+      renderCurrentScreen();
+      showToast('Switched to ' + (mode === 'phone' ? 'Phone View' : '10" Tablet View'), '🔄');
+    }
+
+    function setColorTheme(themeName) {
+      appState.theme = themeName;
+      ['light', 'dark'].forEach(t => {
+        const btn = document.getElementById('theme-' + t);
+        if (btn) {
+          if (t === themeName) {
+            btn.classList.add('bg-slate-700', 'text-white');
+            btn.classList.remove('text-slate-400');
+          } else {
+            btn.classList.remove('bg-slate-700', 'text-white');
+            btn.classList.add('text-slate-400');
+          }
+        }
+      });
+
+      const theme = THEMES[themeName];
+      document.getElementById('phone-screen').style.backgroundColor = theme.bg;
+      document.getElementById('tablet-screen').style.backgroundColor = theme.bg;
+      
+      const bottomNav = document.getElementById('phone-bottom-nav');
+      if (bottomNav) {
+        bottomNav.style.backgroundColor = theme.surface;
+        bottomNav.style.borderColor = theme.border;
+      }
+
+      renderCurrentScreen();
+      showToast('Theme set to ' + themeName.toUpperCase(), '🎨');
+    }
+
+    function changeScreen(screenKey) {
+      appState.screen = screenKey;
+
+      // Update Native Phone Bottom Navigation Bar
+      const navKeys = ['board', 'facilitator', 'charts', 'tokens'];
+      navKeys.forEach(k => {
+        const btn = document.getElementById('pnav-' + k);
+        if (btn) {
+          const pill = btn.querySelector('.pill-badge');
+          const label = btn.querySelector('.tab-label');
+          if (k === screenKey) {
+            pill.className = 'pill-badge w-12 h-7 rounded-full flex items-center justify-center transition-all bg-blue-50 text-blue-600 scale-105';
+            label.className = 'tab-label text-[10px] font-bold mt-0.5 text-blue-600 tracking-tight';
+          } else {
+            pill.className = 'pill-badge w-12 h-7 rounded-full flex items-center justify-center transition-all text-slate-500 hover:text-slate-900';
+            label.className = 'tab-label text-[10px] font-medium mt-0.5 text-slate-500 tracking-tight';
+          }
+        }
+      });
+
+      renderCurrentScreen();
+      showToast('Switched to: ' + screenKey, '📄');
+    }
+
+    function setRole(role) {
+      playTapSound(600, 0.06);
+      appState.activeRole = role;
+      renderCurrentScreen();
+      showToast('Role: ' + role.toUpperCase(), '👤');
+    }
+
+    function enterPin(digit) {
+      playTapSound(520, 0.06);
+      if (digit === 'clear') {
+        appState.pinInput = '';
+      } else if (digit === 'back') {
+        appState.pinInput = appState.pinInput.slice(0, -1);
+      } else {
+        if (appState.pinInput.length < 4) {
+          appState.pinInput += digit;
+          if (appState.pinInput.length === 4) {
+            if (appState.pinInput === '1234') {
+              showToast('PIN Verified! Access granted.', '🔓');
+            } else {
+              showToast('Invalid PIN (D-04)', '❌');
+            }
+          }
+        }
+      }
+      renderCurrentScreen();
+    }
+
+    function toggleAudio() {
+      appState.audioEnabled = !appState.audioEnabled;
+      document.getElementById('audio-icon-on').classList.toggle('hidden', !appState.audioEnabled);
+      document.getElementById('audio-icon-off').classList.toggle('hidden', appState.audioEnabled);
+      showToast(appState.audioEnabled ? 'Audio unmuted' : 'Audio muted', appState.audioEnabled ? '🔊' : '🔇');
+    }
+
+    function showToast(text, icon = 'ℹ️') {
+      const toast = document.getElementById('toast');
+      const toastText = document.getElementById('toast-text');
+      const toastIcon = document.getElementById('toast-icon');
+      toastText.innerText = text;
+      toastIcon.innerText = icon;
+      toast.classList.remove('opacity-0', 'pointer-events-none', 'translate-y-2');
+      clearTimeout(window._toastTimeout);
+      window._toastTimeout = setTimeout(() => {
+        toast.classList.add('opacity-0', 'pointer-events-none', 'translate-y-2');
+      }, 2500);
+    }
+
+    let currentZoom = 1.0;
+    function setZoom(scale) {
+      currentZoom = scale;
+      ['100', '85', '70'].forEach(z => {
+        const btn = document.getElementById('zoom-' + z);
+        if (btn) {
+          const targetScale = z === '100' ? 1.0 : z === '85' ? 0.85 : 0.70;
+          if (Math.abs(scale - targetScale) < 0.01) {
+            btn.classList.add('bg-slate-700', 'text-white');
+            btn.classList.remove('text-slate-400');
+          } else {
+            btn.classList.remove('bg-slate-700', 'text-white');
+            btn.classList.add('text-slate-400');
+          }
+        }
+      });
+      const mainContainer = document.querySelector('main');
+      if (mainContainer) {
+        mainContainer.style.transform = 'scale(' + scale + ')';
+        mainContainer.style.transformOrigin = 'top center';
+      }
+      showToast('Zoom set to ' + Math.round(scale * 100) + '%', '🔍');
+    }
+
+    function popOutWindow() {
+      const url = window.location.href;
+      window.open(url, 'KathaEmulatorPopup', 'width=1120,height=880,menubar=no,toolbar=no,location=no,status=no,resizable=yes');
+    }
+
+    function updateClock() {
+      const now = new Date();
+      const hrs = String(now.getHours()).padStart(2, '0');
+      const mins = String(now.getMinutes()).padStart(2, '0');
+      const clockEl = document.getElementById('phone-clock');
+      if (clockEl) clockEl.innerText = hrs + ':' + mins;
+    }
+    setInterval(updateClock, 1000);
+    updateClock();
+
+    // Default to Mobile Phone View
+    setDeviceMode('phone');
+  </script>
+
+</body>
+</html>

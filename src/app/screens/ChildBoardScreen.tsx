@@ -10,7 +10,8 @@
  * audio features will own these concerns once their domain layers are built.
  */
 import { useState } from 'react';
-import { SafeAreaView, ScrollView, StyleSheet, View } from 'react-native';
+import { SafeAreaView, ScrollView, StyleSheet, useWindowDimensions, View } from 'react-native';
+import * as Speech from 'expo-speech';
 
 import { getNavLabel, getWordLabel } from '@/core/i18n';
 import { childGeometry, size, useTheme } from '@/core/theme';
@@ -57,6 +58,8 @@ const CORE_KEYS: CoreKeyRowItem[] = [
 
 export function ChildBoardScreen() {
   const { colors } = useTheme();
+  const { width } = useWindowDimensions();
+  const isPhone = width < 600;
   const [message, setMessage] = useState<MessageBarSymbol[]>([]);
 
   const addSymbol = (id: string, pictogram: string, label: string) => {
@@ -69,8 +72,10 @@ export function ChildBoardScreen() {
   const handleUndo = () => setMessage((prev) => prev.slice(0, -1));
   const handleClear = () => setMessage([]);
   const handleSpeak = () => {
-    // Phase 4: trigger TTS via audio feature
-    setMessage([]);
+    if (message.length > 0) {
+      const sentenceText = message.map((s) => ('label' in s ? s.label : '')).join(' ');
+      Speech.speak(sentenceText, { language: 'si-LK', pitch: 1.05, rate: 0.9 });
+    }
   };
 
   const sentence = message.length === 0
@@ -88,15 +93,15 @@ export function ChildBoardScreen() {
 
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: colors.child.bg }]}>
-      <View style={styles.board}>
+      <View style={[styles.board, isPhone && styles.phoneBoard]}>
         {/* ── Top row: message bar + action buttons ── */}
-        <View style={styles.topRow}>
+        <View style={[styles.topRow, isPhone && styles.phoneTopRow]}>
           <MessageBar
             symbols={message}
             sentence={sentence}
             accessibilityLabel="Message bar"
           />
-          <View style={styles.actions}>
+          <View style={[styles.actions, isPhone && styles.phoneActions]}>
             <ChildButton
               kind="clear"
               accessibilityLabel="Clear message"
@@ -117,15 +122,21 @@ export function ChildBoardScreen() {
           </View>
         </View>
 
-        <View style={{ height: childGeometry.zoneGap }} />
+        <View style={{ height: isPhone ? 8 : childGeometry.zoneGap }} />
 
         {/* ── Core key row ── */}
-        <CoreKeyRow keys={CORE_KEYS} />
+        {isPhone ? (
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ flexGrow: 0 }}>
+            <CoreKeyRow keys={CORE_KEYS} />
+          </ScrollView>
+        ) : (
+          <CoreKeyRow keys={CORE_KEYS} />
+        )}
 
-        <View style={{ height: childGeometry.zoneGap }} />
+        <View style={{ height: isPhone ? 8 : childGeometry.zoneGap }} />
 
         {/* ── 3×4 symbol grid ── */}
-        <ScrollView contentContainerStyle={styles.gridContainer} scrollEnabled={false}>
+        <ScrollView contentContainerStyle={styles.gridContainer} scrollEnabled={isPhone}>
           <SymbolGrid cells={gridCells} columns={4} />
         </ScrollView>
       </View>
@@ -141,15 +152,26 @@ const styles = StyleSheet.create({
     flex: 1,
     padding: size.childMargin,
   },
+  phoneBoard: {
+    padding: 12,
+  },
   topRow: {
     flexDirection: 'row',
     alignItems: 'flex-start',
     gap: size.cellGap,
   },
+  phoneTopRow: {
+    flexDirection: 'column',
+    gap: 8,
+  },
   actions: {
     flexDirection: 'row',
     gap: 8,
     alignItems: 'center',
+  },
+  phoneActions: {
+    width: '100%',
+    justifyContent: 'space-between',
   },
   gridContainer: {
     flexGrow: 1,
