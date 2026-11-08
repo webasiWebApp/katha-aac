@@ -73,16 +73,25 @@ export function ChildButton({
         style={{
           ...(compactHeight !== undefined ? { alignSelf: 'stretch' as const, flex: 1 } : { width: isSpeak ? 136 : 96 }),
           height: compactHeight ?? 96,
+          flexDirection: compactHeight !== undefined && isSpeak ? 'row' : 'column',
+          gap: 6,
           alignItems: 'center',
           justifyContent: 'center',
           ...frame,
         }}
       >
         <View style={{ opacity: dim }}>
-          <Pictogram symbol={PICTOGRAM[kind]} size={isSpeak ? 52 : 56} />
+          <Pictogram symbol={PICTOGRAM[kind]} size={compactHeight !== undefined ? Math.round(compactHeight * 0.55) : isSpeak ? 52 : 56} />
         </View>
         {isSpeak && label ? (
-          <Text style={[childText.chip, { color: colors.child.ink, opacity: dim }]}>{label}</Text>
+          <Text
+            numberOfLines={compactHeight !== undefined ? 1 : undefined}
+            adjustsFontSizeToFit={compactHeight !== undefined}
+            minimumFontScale={0.5}
+            style={[childText.chip, { color: colors.child.ink, opacity: dim }, compactHeight !== undefined ? { flexShrink: 1 } : null]}
+          >
+            {label}
+          </Text>
         ) : null}
         {resolved === 'longPress' ? (
           // Progress ring while the long-press is held. Ring styling is approximated: the Figma

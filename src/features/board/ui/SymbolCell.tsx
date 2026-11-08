@@ -61,6 +61,21 @@ export function SymbolCell({
   const layout = LAYOUT[size];
   const preset = childGeometry.cell[size];
   const dims = { width: width ?? preset.width, height: height ?? preset.height };
+  // Content scales to the real cell box. Short, wide cells (phone landscape) switch to a row.
+  const fitted = width !== undefined && height !== undefined;
+  const direction: 'row' | 'column' =
+    fitted && size !== 'S' && dims.height < 100 && dims.width > dims.height * 1.6 ? 'row' : layout.direction;
+  const padV = layout.pad.t + layout.pad.b;
+  const picture = fitted
+    ? Math.max(
+        24,
+        Math.floor(
+          direction === 'row'
+            ? Math.min(layout.picture, dims.height - padV)
+            : Math.min(layout.picture, (dims.height - padV) * 0.5, dims.width * 0.6),
+        ),
+      )
+    : layout.picture;
   const interactive = onPress !== undefined && state !== 'hidden' && state !== 'disabled';
 
   const render = (pressed: boolean) => {
@@ -74,7 +89,7 @@ export function SymbolCell({
     const container: ViewStyle = {
       width: dims.width,
       height: dims.height,
-      flexDirection: layout.direction,
+      flexDirection: direction,
       alignItems: 'center',
       justifyContent: 'center',
       gap: layout.gap,
@@ -95,9 +110,18 @@ export function SymbolCell({
           <ClassTint wordClass={wordClass} testID="class-tint" />
         </View>
         <View style={{ opacity: contentOpacity }}>
-          <Pictogram symbol={pictogram} size={layout.picture} />
+          <Pictogram symbol={pictogram} size={picture} />
         </View>
-        <Text style={[LABEL_STYLE[size], { color: colors.child.ink, opacity: contentOpacity }]}>
+        <Text
+          numberOfLines={fitted ? 2 : undefined}
+          adjustsFontSizeToFit={fitted}
+          minimumFontScale={0.5}
+          style={[
+            LABEL_STYLE[size],
+            { color: colors.child.ink, opacity: contentOpacity },
+            fitted ? { flexShrink: 1, textAlign: 'center' } : null,
+          ]}
+        >
           {label}
         </Text>
         {opensPage && state !== 'hidden' ? (

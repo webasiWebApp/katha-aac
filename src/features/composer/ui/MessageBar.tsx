@@ -59,13 +59,15 @@ export function MessageBar({
   const { colors, reducedMotion } = useTheme();
   const speaking = state === 'speaking';
   const bw = speaking ? 3 : 2;
+  const phone = minHeight < 96;
+  const sentenceLines = minHeight >= 72 ? 2 : 1;
 
   const container: ViewStyle = {
-    minHeight,
+    ...(phone ? { height: minHeight, overflow: 'hidden' as const } : { minHeight }),
     alignSelf: 'stretch',
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 16,
+    gap: phone ? 8 : 16,
     borderRadius: 20,
     borderWidth: bw,
     borderColor: speaking ? colors.child.selected : colors.child.cellBorder,
@@ -101,6 +103,7 @@ export function MessageBar({
                   state={symbol.speaking && !reducedMotion ? 'speaking' : 'default'}
                   pictogram={symbol.pictogram}
                   label={symbol.label}
+                  height={phone ? minHeight - 12 : undefined}
                 />
               ) : (
                 <TemplateSlot
@@ -114,10 +117,15 @@ export function MessageBar({
               ),
             )}
           </View>
-          <View style={{ width: 2, height: 56, backgroundColor: colors.child.cellBorder }} />
+          <View style={{ width: 2, height: phone ? minHeight - 20 : 56, backgroundColor: colors.child.cellBorder }} />
         </>
       ) : null}
-      <Text style={[childText.message, { flex: 1, color: colors.child.ink }]}>
+      <Text
+        numberOfLines={phone ? sentenceLines : undefined}
+        adjustsFontSizeToFit={phone}
+        minimumFontScale={0.5}
+        style={[childText.message, { flex: 1, color: colors.child.ink }, phone ? { lineHeight: Math.floor((minHeight - 12) / sentenceLines) } : null]}
+      >
         {sentence.map((part, i) => (
           <Text key={i} style={{ color: toneColor(part.tone) }}>
             {part.text}
