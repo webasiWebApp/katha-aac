@@ -20,6 +20,8 @@ export interface CoreKeyProps {
   /** When set, the key fills the available width (used by CoreKeyRow). Default 143 x 88. */
   flex?: boolean;
   accessibilityLabel?: string;
+  /** Key height in dp (default 88; phones use 64). */
+  height?: number;
 }
 
 const RADIUS = 16;
@@ -34,6 +36,7 @@ export function CoreKey({
   onPress,
   flex = false,
   accessibilityLabel,
+  height = 88,
 }: CoreKeyProps) {
   const { colors } = useTheme();
 
@@ -46,7 +49,7 @@ export function CoreKey({
     });
     const bw = frame.borderWidth ?? 2;
     const container: ViewStyle = {
-      height: 88,
+      height,
       ...(flex ? { flex: 1 } : { width: 143 }),
       alignItems: 'center',
       justifyContent: 'center',
@@ -65,7 +68,7 @@ export function CoreKey({
         >
           <ClassTint wordClass={kind === 'core' ? 'core' : 'folder'} testID="class-tint" />
         </View>
-        <Pictogram symbol={pictogram} size={44} />
+        <Pictogram symbol={pictogram} size={height < 80 ? 32 : 44} />
         <Text style={[childText.labelS, { color: colors.child.ink }]}>{label}</Text>
       </View>
     );

@@ -1,3 +1,4 @@
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { memo, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import {
   Pressable,
@@ -16,7 +17,6 @@ import { t } from '@/core/i18n/t';
 import { logError } from '@/core/log';
 import { childText, useTheme } from '@/core/theme';
 import type { AudioOutcome, GridSize } from '@/core/types/common';
-import { Button, EmptyState } from '@/core/ui';
 import { AdultDot, getAudioService } from '@/features/audio/index';
 import {
   ChildButton,
@@ -36,7 +36,7 @@ import {
   type PictogramName,
   type VocabularyContent,
 } from '@/features/vocabulary/index';
-import { computeGrid, type GridResult } from '../domain/gridLayout';
+import { boardMetrics, computeGrid, layoutMode, type GridResult } from '../domain/gridLayout';
 import {
   GATE_AREA,
   gateStateMachine,
@@ -56,8 +56,6 @@ export interface BoardScreenProps {
   reducedMotion: boolean;
   /** Called when the two-finger 3 s adult gate completes. */
   onGate: () => void;
-  /** Phone guard: Ghost button back (T-080). */
-  onLeave?: () => void;
   /** Override the measured screen size (tests). */
   size?: { width: number; height: number };
 }
@@ -69,23 +67,20 @@ const MSG_ROW = 96;
 
 export function BoardScreen(props: BoardScreenProps) {
   const win = useWindowDimensions();
-  const width = props.size?.width ?? win.width;
-  const height = props.size?.height ?? win.height;
-  if (Math.min(width, height) < 600) {
-    return (
-      <View style={styles.center} testID="board-phone-guard">
-        <EmptyState title={t('board.tablet_title')} body={t('settings.phone_guard')} icon="info" />
-        {props.onLeave ? <Button label={t('common.back')} variant="ghost" onPress={props.onLeave} /> : null}
-      </View>
-    );
-  }
-  return <Board {...props} width={width} height={height} />;
+  const insets = useSafeAreaInsets();
+  // Tests pass an explicit size; real devices lose the notch / home-indicator areas.
+  const inset = props.size ? { top: 0, bottom: 0, left: 0, right: 0 } : insets;
+  const width = (props.size?.width ?? win.width) - inset.left - inset.right;
+  const height = (props.size?.height ?? win.height) - inset.top - inset.bottom;
+  return <Board {...props} width={width} height={height} inset={inset} />;
 }
 
-function Board(props: BoardScreenProps & { width: number; height: number }) {
+function Board(props: BoardScreenProps & { width: number; height: number; inset: { top: number; bottom: number; left: number; right: number } }) {
   const { colors } = useTheme();
   const db = useDb();
-  const { sessionId, learnerId, hand, reducedMotion, width, height } = props;
+  const { sessionId, learnerId, hand, reducedMotion, width, height, inset } = props;
+  const mode = layoutMode(width, height);
+  const m = boardMetrics(mode);
   const vocabulary = useMemo(() => getActiveVocabulary(db), [db]);
   const audio = useMemo(() => getAudioService(db), [db]);
   const adultCheck = useMemo(() => getSetting<boolean>(db, 'childView.adultCheck', true), [db]);
@@ -102,8 +97,8 @@ function Board(props: BoardScreenProps & { width: number; height: number }) {
   const [highlight, setHighlight] = useState(-1);
 
   const grid = useMemo(
-    () => computeGrid({ width, height, gridSize: props.gridSize }),
-    [width, height, props.gridSize],
+    () => computeGrid({ width, height, gridSize: props.gridSize, mode }),
+    [width, height, props.gridSize, mode],
   );
   useEffect(() => {
     if (grid.fellBack) logError('board', 'grid_too_small', new Error(props.gridSize));
@@ -342,24 +337,49 @@ function Board(props: BoardScreenProps & { width: number; height: number }) {
   const speaking = state.mode === 'speaking';
   const barState = audioDot ? 'audioFallback' : speaking ? 'speaking' : 'idle';
   const buttons = [
-    <ChildButton key="clear" kind="clear" accessibilityLabel={t('board.a11y.clear')} accessibilityHint={t('board.a11y.clear_hint')} state={composer.buttons.clear ? 'default' : 'disabled'} onLongPress={composer.clear} />,
-    <ChildButton key="undo" kind="undo" accessibilityLabel={t('board.a11y.undo')} state={composer.buttons.undo ? 'default' : 'disabled'} onPress={composer.undo} />,
-    <ChildButton key="replay" kind="replay" accessibilityLabel={t('board.a11y.replay')} state={composer.buttons.replay ? 'default' : 'disabled'} onPress={composer.replay} />,
-    <ChildButton key="speak" kind="speak" label={getNavLabel('speak')} accessibilityLabel={t('board.a11y.speak')} state={composer.buttons.speak ? 'default' : 'disabled'} onPress={composer.speak} />,
+    <ChildButton key="clear" kind="clear" compactHeight={m.button ?? undefined} accessibilityLabel={t('board.a11y.clear')} accessibilityHint={t('board.a11y.clear_hint')} state={composer.buttons.clear ? 'default' : 'disabled'} onLongPress={composer.clear} />,
+    <ChildButton key="undo" kind="undo" compactHeight={m.button ?? undefined} accessibilityLabel={t('board.a11y.undo')} state={composer.buttons.undo ? 'default' : 'disabled'} onPress={composer.undo} />,
+    <ChildButton key="replay" kind="replay" compactHeight={m.button ?? undefined} accessibilityLabel={t('board.a11y.replay')} state={composer.buttons.replay ? 'default' : 'disabled'} onPress={composer.replay} />,
+    <ChildButton key="speak" kind="speak" compactHeight={m.button ?? undefined} label={getNavLabel('speak')} accessibilityLabel={t('board.a11y.speak')} state={composer.buttons.speak ? 'default' : 'disabled'} onPress={composer.speak} />,
   ];
   const bar = (
-    <View key="bar" style={styles.barWrap}>
-      <MessageBar symbols={symbolsForBar} sentence={sentence} state={barState} accessibilityLabel={t('board.a11y.message_bar')} />
+    <View key="bar" style={mode === 'phonePortrait' ? undefined : styles.barWrap}>
+      <MessageBar minHeight={m.bar} symbols={symbolsForBar} sentence={sentence} state={barState} accessibilityLabel={t('board.a11y.message_bar')} />
       {audioDot ? <AdultDot style={styles.audioDot} accessibilityLabel={t('board.a11y.audio_dot')} /> : null}
     </View>
   );
-  const row = hand === 'left' ? [...buttons].reverse().concat(bar) : [bar, ...buttons];
+  const orderedButtons = hand === 'left' ? [...buttons].reverse() : buttons;
+  const buttonGroup = <View key="buttons" style={mode === 'phoneLandscape' ? styles.buttonGroupLandscape : styles.buttonGroup}>{orderedButtons}</View>;
+  const row = hand === 'left' ? [...orderedButtons].concat(bar) : [bar, ...orderedButtons];
 
   const chipPos = lastHidden >= 0 ? { row: Math.floor(lastHidden / grid.cols), col: lastHidden % grid.cols } : null;
 
   return (
-    <View style={[styles.root, { backgroundColor: colors.child.bg }]} onTouchStart={touched} testID="board-root">
-      <View style={[styles.messageRow, { height: MSG_ROW }]}>{row}</View>
+    <View
+      style={[
+        styles.root,
+        {
+          backgroundColor: colors.child.bg,
+          gap: m.zoneGap,
+          paddingTop: m.margin + inset.top,
+          paddingBottom: m.margin + inset.bottom,
+          paddingLeft: m.margin + inset.left,
+          paddingRight: m.margin + inset.right,
+        },
+      ]}
+      onTouchStart={touched}
+      testID="board-root"
+    >
+      {mode === 'phonePortrait' ? (
+        <>
+          {bar}
+          <View style={[styles.messageRow, { height: m.button ?? MSG_ROW }]}>{orderedButtons}</View>
+        </>
+      ) : mode === 'phoneLandscape' ? (
+        <View style={[styles.messageRow, { height: m.messageBlock }]}>{hand === 'left' ? [buttonGroup, bar] : [bar, buttonGroup]}</View>
+      ) : (
+        <View style={[styles.messageRow, { height: MSG_ROW }]}>{row}</View>
+      )}
 
       <View style={[styles.grid, { gap: grid.gap, opacity: speaking ? 0.7 : 1 }]} testID="board-grid">
         <BoardGrid cells={cells} grid={grid} vocabulary={vocabulary} onCellPress={onCellPress} />
@@ -385,7 +405,7 @@ function Board(props: BoardScreenProps & { width: number; height: number }) {
         ) : null}
       </View>
 
-      <CoreKeyRow keys={keys} hand={hand} />
+      <CoreKeyRow keys={keys} hand={hand} keyHeight={m.coreKey ?? undefined} rows={m.coreRows} />
 
       <View
         style={styles.gate}
@@ -478,8 +498,9 @@ const BoardGrid = memo(function BoardGrid({ cells, grid, vocabulary, onCellPress
 });
 
 const styles = StyleSheet.create({
-  center: { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 16, padding: 24 },
   root: { flex: 1, padding: 24, gap: 12 },
+  buttonGroup: { flexDirection: 'row', gap: 8 },
+  buttonGroupLandscape: { flexDirection: 'row', gap: 8, width: 300 },
   messageRow: { flexDirection: 'row', gap: 8, alignItems: 'center' },
   barWrap: { flex: 1 },
   audioDot: { position: 'absolute', top: 4, right: 4 },

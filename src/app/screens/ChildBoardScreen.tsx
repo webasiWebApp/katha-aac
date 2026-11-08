@@ -110,10 +110,6 @@ export function ChildBoardScreen({ navigation, route }: RootScreenProps<'ChildMo
         idleReturnSeconds={learner.idle_return_seconds}
         reducedMotion={learner.reduced_motion === 1}
         onGate={() => setGateOpen(true)}
-        onLeave={() => {
-          finish('adult_exit');
-          navigation.replace('AdultSignIn');
-        }}
       />
       {gateOpen ? (
         <View style={[StyleSheet.absoluteFill, styles.overlay, { backgroundColor: colors.fac.bg }]} testID="gate-signin">

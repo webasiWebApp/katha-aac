@@ -36,6 +36,8 @@ export interface MessageBarProps {
   /** Adult-only text for the TTS dot on state="audioFallback", for example "TTS voice used". */
   audioFallbackLabel?: string;
   accessibilityLabel: string;
+  /** Phone: minimum height in dp (default 96). */
+  minHeight?: number;
 }
 
 const PAD = { l: 10, r: 20, t: 6, b: 6 };
@@ -52,13 +54,14 @@ export function MessageBar({
   state = 'idle',
   audioFallbackLabel,
   accessibilityLabel,
+  minHeight = 96,
 }: MessageBarProps) {
   const { colors, reducedMotion } = useTheme();
   const speaking = state === 'speaking';
   const bw = speaking ? 3 : 2;
 
   const container: ViewStyle = {
-    minHeight: 96,
+    minHeight,
     alignSelf: 'stretch',
     flexDirection: 'row',
     alignItems: 'center',

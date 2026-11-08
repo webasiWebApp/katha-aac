@@ -98,7 +98,6 @@ export const en = {
   'settings.data_retention':   'Data and retention',
   'settings.about':            'About',
   'settings.vocabulary':       'Vocabulary',
-  'settings.phone_guard':      'Use a tablet for child mode.',
 
   // ── Common ──────────────────────────────────────────────────────────────
   'common.cancel':             'Cancel',
@@ -248,7 +247,6 @@ export const en = {
   'pin_confirm.body':          'Enter your PIN to continue.',
 
   // ── Child board (adult-facing labels) ───────────────────────────────────
-  'board.tablet_title':        'Child mode needs a tablet',
   'board.slot':                'Empty slot',
   'board.a11y.clear':          'Clear message',
   'board.a11y.clear_hint':     'Hold to clear',

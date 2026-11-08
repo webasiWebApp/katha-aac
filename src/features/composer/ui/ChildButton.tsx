@@ -21,6 +21,8 @@ export interface ChildButtonProps {
   onPress?: () => void;
   /** Clear: long-press only, so a stray tap cannot wipe the message. */
   onLongPress?: () => void;
+  /** Phone: button height in dp; buttons share the row width (Speak takes double). */
+  compactHeight?: number;
 }
 
 const PICTOGRAM: Record<ChildButtonKind, PictogramName> = {
@@ -43,6 +45,7 @@ export function ChildButton({
   accessibilityHint,
   onPress,
   onLongPress,
+  compactHeight,
 }: ChildButtonProps) {
   const { colors } = useTheme();
   const disabled = state === 'disabled';
@@ -68,8 +71,8 @@ export function ChildButton({
     return (
       <View
         style={{
-          width: isSpeak ? 136 : 96,
-          height: 96,
+          ...(compactHeight !== undefined ? { alignSelf: 'stretch' as const, flex: 1 } : { width: isSpeak ? 136 : 96 }),
+          height: compactHeight ?? 96,
           alignItems: 'center',
           justifyContent: 'center',
           ...frame,
@@ -110,6 +113,7 @@ export function ChildButton({
       accessibilityLabel={accessibilityLabel}
       accessibilityHint={accessibilityHint}
       accessibilityState={{ disabled }}
+      style={compactHeight !== undefined ? { flex: isSpeak ? 2 : 1 } : undefined}
     >
       {({ pressed }) => render(pressed)}
     </Pressable>

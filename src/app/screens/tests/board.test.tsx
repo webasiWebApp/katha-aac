@@ -56,13 +56,6 @@ describe('board layout (T-072)', () => {
     expect(screen.getByLabelText('Speak message')).toBeTruthy();
     expect(screen.getByLabelText('Replay message')).toBeTruthy();
   });
-
-  it('shows the phone guard under 600 dp (T-080)', async () => {
-    await board({ size: { width: 400, height: 800 } });
-    expect(screen.getByTestId('board-phone-guard')).toBeTruthy();
-    expect(screen.getByText('Child mode needs a tablet')).toBeTruthy();
-    expect(screen.queryByTestId('board-grid')).toBeNull();
-  });
 });
 
 describe('building and speaking (T-071, T-073, T-074)', () => {
